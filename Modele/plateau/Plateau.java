@@ -1,4 +1,4 @@
-package demineur.Modele.plateau;
+package Modele.plateau;
 
 import java.awt.Point;
 import java.util.HashMap;
@@ -33,7 +33,7 @@ public class Plateau extends Observable {
 
     }
 
-    public getVoisins(Case c) {
+    public Case[] getVoisins(Case c) {
         Point p = map.get(c);
         int x = p.x;
         int y = p.y;
@@ -56,7 +56,27 @@ public class Plateau extends Observable {
         return map.get(c);
     }
 
+    public void placerPieces() {
+        placerMines();
+    }
 
+    private Object jeu;
+
+    public void setJeu(Object jeuObj) {
+        this.jeu = jeuObj;
+    }
+
+    public void placerMines() {
+        int minesPlacees = 0;
+        while (minesPlacees < NB_MINES) {
+            int x = (int) (Math.random() * SIZE_X);
+            int y = (int) (Math.random() * SIZE_Y);
+            if (!grilleCases[x][y].isMine()) {
+                grilleCases[x][y].setMine(true);
+                minesPlacees++;
+            }
+        }
+    }
 
     public void notifierObservateurs() {
         setChanged();

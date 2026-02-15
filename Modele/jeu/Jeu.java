@@ -1,13 +1,7 @@
-package demineur.Modele.jeu;
+package Modele.jeu;
 
-import demineur.Modele.plateau.Case;
-import demineur.Modele.plateau.Plateau;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-
-
-import java.awt.Point;
+import Modele.plateau.Case;
+import Modele.plateau.Plateau;
 
 public class Jeu extends Thread{
     private Plateau plateau;
@@ -33,4 +27,6 @@ public class Jeu extends Thread{
     public Plateau getPlateau() {
         return plateau;
     }
+
+      
 }

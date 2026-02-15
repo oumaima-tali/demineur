@@ -1,6 +1,5 @@
-package demineur.Modele.plateau;
+package Modele.plateau;
 
-import Modele.jeu.Piece;
 
 public class Case {
 
@@ -8,6 +7,7 @@ public class Case {
     private boolean visible = false;
     private boolean flagged = false;
     private int nbMinesAutour = 0;
+    private boolean mine = false;
 
     public int getValeur() {return valeur;}
 
@@ -18,7 +18,9 @@ public class Case {
     public int getNbMinesAutour() {return nbMinesAutour;}
 
     public void decouvrir() {visible = true;}
+    public boolean isMine() {return mine;}
 
+    public void setMine(boolean _mine) {mine = _mine;}
 
 
     protected Plateau plateau;
