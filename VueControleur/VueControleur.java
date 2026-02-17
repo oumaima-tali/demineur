@@ -52,8 +52,10 @@ public class VueControleur extends JPanel implements Observer {
                 jlab.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
-                        caseClic1 = plateau.getCases()[xx][yy];
-                        // Placeholder for future game logic
+                        Case c = plateau.getCases()[xx][yy];
+                        caseClic1 = c;
+                        c.decouvrir();
+                        plateau.notifierObservateurs();
                     }
                 });
                 grilleJLabels.add(jlab);
@@ -67,7 +69,16 @@ public class VueControleur extends JPanel implements Observer {
         for (int x = 0; x < sizeX; x++) {
             for (int y = 0; y < sizeY; y++) {
                 Case c = plateau.getCases()[x][y];
-                tabJLabel[x][y].setText("");
+                if (c.isVisible()) {
+                    int valeur = c.getValeur();
+                    if (valeur == -1) {
+                        tabJLabel[x][y].setText("*");
+                    } else {
+                        tabJLabel[x][y].setText(String.valueOf(valeur));
+                    }
+                } else {
+                    tabJLabel[x][y].setText("");
+                }
             }
         }
     }

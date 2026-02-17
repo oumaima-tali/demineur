@@ -9,6 +9,7 @@ public class Plateau extends Observable {
     public static final int SIZE_X = 8 ;
     public static final int SIZE_Y = 13 ;
     public static final int NB_MINES = 20 ;
+    private Object jeu;
 
     private HashMap<Case, Point> map = new  HashMap<Case, Point>();
     private Case[][] grilleCases = new Case[SIZE_X][SIZE_Y];
@@ -22,7 +23,6 @@ public class Plateau extends Observable {
     }
 
     private void initPlateauVide() {
-
         for (int x = 0; x < SIZE_X; x++) {
             for (int y = 0; y < SIZE_Y; y++) {
                 grilleCases[x][y] = new Case(this);
@@ -58,9 +58,10 @@ public class Plateau extends Observable {
 
     public void placerPieces() {
         placerMines();
+        calculerValeurs();
     }
 
-    private Object jeu;
+    
 
     public void setJeu(Object jeuObj) {
         this.jeu = jeuObj;
@@ -73,7 +74,27 @@ public class Plateau extends Observable {
             int y = (int) (Math.random() * SIZE_Y);
             if (!grilleCases[x][y].isMine()) {
                 grilleCases[x][y].setMine(true);
+                grilleCases[x][y].setValeur(-1);
                 minesPlacees++;
+            }
+        }
+    }
+
+    private void calculerValeurs() {
+        for (int x = 0; x < SIZE_X; x++) {
+            for (int y = 0; y < SIZE_Y; y++) {
+                Case c = grilleCases[x][y];
+                if (!c.isMine()) {
+                    // Compter les mines adjacentes
+                    int minesAutour = 0;
+                    Case[] voisins = getVoisins(c);
+                    for (Case voisin : voisins) {
+                        if (voisin != null && voisin.isMine()) {
+                            minesAutour++;
+                        }
+                    }
+                    c.setValeur(minesAutour);
+                }
             }
         }
     }

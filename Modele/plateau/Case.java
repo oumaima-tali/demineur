@@ -22,6 +22,8 @@ public class Case {
 
     public void setMine(boolean _mine) {mine = _mine;}
 
+    public void setValeur(int _valeur) {valeur = _valeur;}
+
 
     protected Plateau plateau;
 
