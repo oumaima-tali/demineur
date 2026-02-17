@@ -68,8 +68,8 @@ public class VueControleur extends JPanel implements Observer {
                             // Clic droit : toggle flag
                             c.toggleFlag();
                         } else if (SwingUtilities.isLeftMouseButton(e)) {
-                            // Clic gauche : découvrir (seulement si pas de drapeau)
-                            c.decouvrir();
+                            // Clic gauche : découvrir avec propagation si valeur = 0
+                            plateau.decouvrirCase(c);
                         }
                         
                         plateau.notifierObservateurs();

@@ -99,6 +99,26 @@ public class Plateau extends Observable {
         }
     }
 
+    public void decouvrirCase(Case c) {
+        // Si la case est déjà visible ou a un drapeau, on ne fait rien
+        if (c.isVisible() || c.isFlagged()) {
+            return;
+        }
+        
+        // Découvrir la case
+        c.decouvrir();
+        
+        // Si la valeur est 0, découvrir récursivement les voisins
+        if (c.getValeur() == 0) {
+            Case[] voisins = getVoisins(c);
+            for (Case voisin : voisins) {
+                if (voisin != null) {
+                    decouvrirCase(voisin);
+                }
+            }
+        }
+    }
+
     public void notifierObservateurs() {
         setChanged();
         notifyObservers();
