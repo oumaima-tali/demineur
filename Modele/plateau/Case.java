@@ -17,12 +17,23 @@ public class Case {
 
     public int getNbMinesAutour() {return nbMinesAutour;}
 
-    public void decouvrir() {visible = true;}
+    public void decouvrir() {
+        if (!flagged) {
+            visible = true;
+        }
+    }
+    
     public boolean isMine() {return mine;}
 
     public void setMine(boolean _mine) {mine = _mine;}
 
     public void setValeur(int _valeur) {valeur = _valeur;}
+
+    public void toggleFlag() {
+        if (!visible) {
+            flagged = !flagged;
+        }
+    }
 
 
     protected Plateau plateau;

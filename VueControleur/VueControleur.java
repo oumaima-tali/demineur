@@ -19,12 +19,21 @@ public class VueControleur extends JPanel implements Observer {
 
     private Case caseClic1;
     private JLabel[][] tabJLabel;
+    private ImageIcon flagIcon;
+    private ImageIcon bombIcon;
 
     public VueControleur(Jeu _jeu) {
         jeu = _jeu;
         plateau = jeu.getPlateau();
         sizeX = plateau.SIZE_X;
         sizeY = plateau.SIZE_Y;
+        
+        // Charger l'image du drapeau
+        flagIcon = new ImageIcon("images/flag.png");
+        Image img = flagIcon.getImage();
+        Image scaledImg = img.getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
+        flagIcon = new ImageIcon(scaledImg);
+        
         placerLesComposantsGraphiques();
         plateau.addObserver(this);
         mettreAJourAffichage();
@@ -54,7 +63,15 @@ public class VueControleur extends JPanel implements Observer {
                     public void mouseClicked(MouseEvent e) {
                         Case c = plateau.getCases()[xx][yy];
                         caseClic1 = c;
-                        c.decouvrir();
+                        
+                        if (SwingUtilities.isRightMouseButton(e)) {
+                            // Clic droit : toggle flag
+                            c.toggleFlag();
+                        } else if (SwingUtilities.isLeftMouseButton(e)) {
+                            // Clic gauche : découvrir (seulement si pas de drapeau)
+                            c.decouvrir();
+                        }
+                        
                         plateau.notifierObservateurs();
                     }
                 });
@@ -66,18 +83,31 @@ public class VueControleur extends JPanel implements Observer {
     }
 
     private void mettreAJourAffichage() {
+        bombIcon = new ImageIcon("images/bomb.png");
+        Image img = bombIcon.getImage();
+        Image scaledImg = img.getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
+        bombIcon = new ImageIcon(scaledImg);
+
         for (int x = 0; x < sizeX; x++) {
             for (int y = 0; y < sizeY; y++) {
                 Case c = plateau.getCases()[x][y];
+                JLabel label = tabJLabel[x][y];
+                
                 if (c.isVisible()) {
                     int valeur = c.getValeur();
+                    label.setIcon(null);
                     if (valeur == -1) {
-                        tabJLabel[x][y].setText("*");
+                        label.setIcon(bombIcon);
                     } else {
-                        tabJLabel[x][y].setText(String.valueOf(valeur));
+                        label.setText(String.valueOf(valeur));
                     }
+                } else if (c.isFlagged()) {
+                    // Afficher le drapeau
+                    label.setText("");
+                    label.setIcon(flagIcon);
                 } else {
-                    tabJLabel[x][y].setText("");
+                    label.setText("");
+                    label.setIcon(null);
                 }
             }
         }
