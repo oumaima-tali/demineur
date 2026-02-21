@@ -22,6 +22,11 @@ public class Case {
             visible = true;
         }
     }
+
+    public void decouvrirForce() {
+        visible = true;
+        flagged = false;
+    }
     
     public boolean isMine() {return mine;}
 

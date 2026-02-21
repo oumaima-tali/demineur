@@ -13,20 +13,22 @@ import Modele.plateau.Plateau;
 public class VueControleur extends JPanel implements Observer {
     private Plateau plateau;
     private Jeu jeu;
+    private final Runnable restartAction;
     private final int sizeX;
     private final int sizeY;
     private static final int pxCase = 40;
-
-    private Case caseClic1;
     private JLabel[][] tabJLabel;
     private ImageIcon flagIcon;
     private ImageIcon bombIcon;
+    private JButton restartButton;
+    private JLabel statusLabel;
 
-    public VueControleur(Jeu _jeu) {
+    public VueControleur(Jeu _jeu, Runnable _restartAction) {
         jeu = _jeu;
+        restartAction = _restartAction;
         plateau = jeu.getPlateau();
-        sizeX = plateau.SIZE_X;
-        sizeY = plateau.SIZE_Y;
+        sizeX = Plateau.SIZE_X;
+        sizeY = Plateau.SIZE_Y;
         
         // Charger l'image du drapeau
         flagIcon = new ImageIcon("images/flag.png");
@@ -61,8 +63,11 @@ public class VueControleur extends JPanel implements Observer {
                 jlab.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
+                        if (!jeu.isEnCours()) {
+                            return;
+                        }
+
                         Case c = plateau.getCases()[xx][yy];
-                        caseClic1 = c;
                         
                         if (SwingUtilities.isRightMouseButton(e)) {
                             // Clic droit : toggle flag
@@ -80,6 +85,15 @@ public class VueControleur extends JPanel implements Observer {
         }
 
         add(grilleJLabels, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        statusLabel = new JLabel(" ");
+        restartButton = new JButton("Recommencer");
+        restartButton.setVisible(false);
+        restartButton.addActionListener(e -> restartAction.run());
+        bottomPanel.add(statusLabel);
+        bottomPanel.add(restartButton);
+        add(bottomPanel, BorderLayout.SOUTH);
     }
 
     private void mettreAJourAffichage() {
@@ -116,5 +130,13 @@ public class VueControleur extends JPanel implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         mettreAJourAffichage();
+
+        if (jeu.isPerdu()) {
+            statusLabel.setText("Perdu !");
+            restartButton.setVisible(true);
+        } else {
+            statusLabel.setText(" ");
+            restartButton.setVisible(false);
+        }
     }
 }

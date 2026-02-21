@@ -3,13 +3,14 @@ package Modele.plateau;
 import java.awt.Point;
 import java.util.HashMap;
 import java.util.Observable;
-import java.util.Observer;
+
+import Modele.jeu.Jeu;
 
 public class Plateau extends Observable {
     public static final int SIZE_X = 8 ;
     public static final int SIZE_Y = 13 ;
     public static final int NB_MINES = 20 ;
-    private Object jeu;
+    private Jeu jeu;
 
     private HashMap<Case, Point> map = new  HashMap<Case, Point>();
     private Case[][] grilleCases = new Case[SIZE_X][SIZE_Y];
@@ -63,7 +64,7 @@ public class Plateau extends Observable {
 
     
 
-    public void setJeu(Object jeuObj) {
+    public void setJeu(Jeu jeuObj) {
         this.jeu = jeuObj;
     }
 
@@ -100,6 +101,10 @@ public class Plateau extends Observable {
     }
 
     public void decouvrirCase(Case c) {
+        if (jeu != null && !jeu.isEnCours()) {
+            return;
+        }
+
         // Si la case est déjà visible ou a un drapeau, on ne fait rien
         if (c.isVisible() || c.isFlagged()) {
             return;
@@ -107,6 +112,14 @@ public class Plateau extends Observable {
         
         // Découvrir la case
         c.decouvrir();
+
+        if (c.isMine()) {
+            decouvrirToutesLesMines();
+            if (jeu != null) {
+                jeu.perdre();
+            }
+            return;
+        }
         
         // Si la valeur est 0, découvrir récursivement les voisins
         if (c.getValeur() == 0) {
@@ -114,6 +127,17 @@ public class Plateau extends Observable {
             for (Case voisin : voisins) {
                 if (voisin != null) {
                     decouvrirCase(voisin);
+                }
+            }
+        }
+    }
+
+    private void decouvrirToutesLesMines() {
+        for (int x = 0; x < SIZE_X; x++) {
+            for (int y = 0; y < SIZE_Y; y++) {
+                Case caseCourante = grilleCases[x][y];
+                if (caseCourante.isMine()) {
+                    caseCourante.decouvrirForce();
                 }
             }
         }

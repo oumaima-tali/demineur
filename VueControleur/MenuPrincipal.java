@@ -37,7 +37,7 @@ public class MenuPrincipal extends JFrame {
 
     private void lancerJeu() {
         Jeu jeu = new Jeu();
-        setContentPane(new VueControleur(jeu));
+        setContentPane(new VueControleur(jeu, this::lancerJeu));
         revalidate();
         repaint();
     }
