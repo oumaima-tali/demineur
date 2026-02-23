@@ -134,6 +134,9 @@ public class VueControleur extends JPanel implements Observer {
         if (jeu.isPerdu()) {
             statusLabel.setText("Perdu !");
             restartButton.setVisible(true);
+        } else if (jeu.isGagne()) {
+            statusLabel.setText("Gagné !");
+            restartButton.setVisible(true);
         } else {
             statusLabel.setText(" ");
             restartButton.setVisible(false);

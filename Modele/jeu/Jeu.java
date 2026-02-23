@@ -7,6 +7,7 @@ public class Jeu extends Thread{
 
     private boolean enCours = true;
     private boolean perdu = false;
+    private boolean gagne = false;
 
     public Jeu() {
         plateau = new Plateau();
@@ -31,6 +32,18 @@ public class Jeu extends Thread{
 
     public boolean isPerdu() {
         return perdu;
+    }
+
+    public boolean isGagne() {
+        return gagne;
+    }
+
+    public void gagner() {
+        if (!enCours) {
+            return;
+        }
+        gagne = true;
+        stopJeu();
     }
 
     public void perdre() {

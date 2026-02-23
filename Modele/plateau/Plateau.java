@@ -10,6 +10,8 @@ public class Plateau extends Observable {
     public static final int SIZE_X = 8 ;
     public static final int SIZE_Y = 13 ;
     public static final int NB_MINES = 20 ;
+    public int casesDecouvertes = 0;
+    public static final int NB_CASES = SIZE_X * SIZE_Y;
     private Jeu jeu;
 
     private HashMap<Case, Point> map = new  HashMap<Case, Point>();
@@ -112,6 +114,7 @@ public class Plateau extends Observable {
         
         // Découvrir la case
         c.decouvrir();
+        casesDecouvertes++;
 
         if (c.isMine()) {
             decouvrirToutesLesMines();
@@ -119,6 +122,12 @@ public class Plateau extends Observable {
                 jeu.perdre();
             }
             return;
+        }
+
+        if (casesDecouvertes == NB_CASES - NB_MINES) {
+            if (jeu != null) {
+                jeu.gagner();
+            }
         }
         
         // Si la valeur est 0, découvrir récursivement les voisins
