@@ -20,6 +20,7 @@ public class VueControleur extends JPanel implements Observer {
     private JLabel[][] tabJLabel;
     private ImageIcon flagIcon;
     private ImageIcon bombIcon;
+    private ImageIcon numberIcon;
     private JButton restartButton;
     private JLabel statusLabel;
 
@@ -113,7 +114,11 @@ public class VueControleur extends JPanel implements Observer {
                     if (valeur == -1) {
                         label.setIcon(bombIcon);
                     } else {
-                        label.setText(String.valueOf(valeur));
+                        numberIcon = new ImageIcon("images/" + valeur + ".png");
+                        Image numImg = numberIcon.getImage();   
+                        Image scaledNumImg = numImg.getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
+                        numberIcon = new ImageIcon(scaledNumImg);
+                        label.setIcon(numberIcon);
                     }
                 } else if (c.isFlagged()) {
                     // Afficher le drapeau
