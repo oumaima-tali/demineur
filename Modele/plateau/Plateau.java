@@ -27,9 +27,6 @@ public abstract class Plateau extends Observable {
         initPlateauVide();
     }
 
-    // -------------------------------------------------------
-    // Méthodes communes
-    // -------------------------------------------------------
 
     private void initPlateauVide() {
         for (int x = 0; x < sizeX; x++) {
@@ -49,6 +46,10 @@ public abstract class Plateau extends Observable {
 
     public Point getPositionCase(Case c) {
         return map.get(c);
+    }
+
+    public Jeu getJeu() {
+        return jeu;
     }
 
     public void setJeu(Jeu jeuObj) {
@@ -90,31 +91,21 @@ public abstract class Plateau extends Observable {
         }
     }
 
+   
     public void decouvrirCase(Case c) {
         if (jeu != null && !jeu.isEnCours()) return;
         if (c.isVisible() || c.isFlagged()) return;
 
-        c.decouvrir();
+        c.decouvrir();   
         casesDecouvertes++;
 
-        if (c.isMine()) {
-            decouvrirToutesLesMines();
-            if (jeu != null) jeu.perdre();
-            return;
-        }
-
-        if (casesDecouvertes == nbCases - NB_MINES) {
+        if (!c.isMine() && casesDecouvertes == nbCases - NB_MINES) {
             if (jeu != null) jeu.gagner();
-        }
-
-        if (c.getValeur() == 0) {
-            for (Case voisin : getVoisins(c)) {
-                if (voisin != null) decouvrirCase(voisin);
-            }
         }
     }
 
-    private void decouvrirToutesLesMines() {
+    
+    void decouvrirToutesLesMines() {
         for (int x = 0; x < sizeX; x++) {
             for (int y = 0; y < sizeY; y++) {
                 Case caseCourante = grilleCases[x][y];
@@ -130,9 +121,27 @@ public abstract class Plateau extends Observable {
         notifyObservers();
     }
 
-    // -------------------------------------------------------
-    // Méthode abstraite : chaque type de plateau définit ses voisins
-    // -------------------------------------------------------
-
+    
     public abstract Case[] getVoisins(Case c);
+
+    
+    public enum Direction {
+
+        NORD      ( 0, -1),
+        NORD_EST  ( 1, -1),
+        EST       ( 1,  0),
+        SUD_EST   ( 1,  1),
+        SUD       ( 0,  1),
+        SUD_OUEST (-1,  1),
+        OUEST     (-1,  0),
+        NORD_OUEST(-1, -1);
+
+        public final int dx;
+        public final int dy;
+
+        Direction(int dx, int dy) {
+            this.dx = dx;
+            this.dy = dy;
+        }
+    }
 }

@@ -7,7 +7,7 @@ import modele.jeu.Jeu;
 public class MenuPrincipal extends JFrame {
 
     public MenuPrincipal() {
-        setTitle("Démineur - Menu Principal");
+        setTitle("Démineur ");
         setSize(500, 800);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
