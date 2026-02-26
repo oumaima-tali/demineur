@@ -1,8 +1,10 @@
 package modele.plateau;
 
 import java.awt.Point;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Observable;
+import java.util.Set;
 import modele.jeu.Jeu;
 
 public abstract class Plateau extends Observable {
@@ -18,6 +20,7 @@ public abstract class Plateau extends Observable {
     protected Jeu jeu;
     protected HashMap<Case, Point> map = new HashMap<>();
     protected Case[][] grilleCases;
+    protected boolean minesInitialisees = false;
 
     public Plateau(int sizeX, int sizeY) {
         this.sizeX = sizeX;
@@ -57,21 +60,52 @@ public abstract class Plateau extends Observable {
     }
 
     public void placerPieces() {
-        placerMines();
+        placerMinesAvecZoneInterdite(null);
         calculerValeurs();
+        minesInitialisees = true;
     }
 
     public void placerMines() {
+        placerMinesAvecZoneInterdite(null);
+    }
+
+    private void placerMinesAvecZoneInterdite(Case premiereCaseCliquee) {
+        Set<Case> casesInterdites = new HashSet<>();
+
+        if (premiereCaseCliquee != null) {
+            casesInterdites.add(premiereCaseCliquee);
+            for (Case voisin : getVoisins(premiereCaseCliquee)) {
+                if (voisin != null) {
+                    casesInterdites.add(voisin);
+                }
+            }
+
+            int casesDisponibles = nbCases - casesInterdites.size();
+            if (casesDisponibles < NB_MINES) {
+                casesInterdites.clear();
+                casesInterdites.add(premiereCaseCliquee);
+            }
+        }
+
         int minesPlacees = 0;
         while (minesPlacees < NB_MINES) {
             int x = (int) (Math.random() * sizeX);
             int y = (int) (Math.random() * sizeY);
-            if (!grilleCases[x][y].isMine()) {
+            if (!grilleCases[x][y].isMine() && !casesInterdites.contains(grilleCases[x][y])) {
                 grilleCases[x][y].setMine(true);
                 grilleCases[x][y].setValeur(-1);
                 minesPlacees++;
             }
         }
+    }
+
+    private void initialiserMinesAuPremierClic(Case premiereCaseCliquee) {
+        if (minesInitialisees) {
+            return;
+        }
+        placerMinesAvecZoneInterdite(premiereCaseCliquee);
+        calculerValeurs();
+        minesInitialisees = true;
     }
 
     private void calculerValeurs() {
@@ -95,6 +129,8 @@ public abstract class Plateau extends Observable {
     public void decouvrirCase(Case c) {
     if (jeu != null && !jeu.isEnCours()) return;
     if (c.isVisible() || c.isFlagged()) return;
+
+    initialiserMinesAuPremierClic(c);
 
     c.decouvrir(); 
 
