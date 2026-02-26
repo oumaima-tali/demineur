@@ -1,6 +1,8 @@
-package Modele.jeu;
+package modele.jeu;
 
-import Modele.plateau.Plateau;
+import modele.plateau.Plateau;
+import modele.plateau.PlateauC;
+import modele.plateau.PlateauH;
 
 public class Jeu extends Thread{
     private Plateau plateau;
@@ -10,13 +12,23 @@ public class Jeu extends Thread{
     private boolean gagne = false;
 
     public Jeu() {
-        plateau = new Plateau();
+        plateau = new PlateauC();
         plateau.setJeu(this);
 
         plateau.placerPieces();
 
         start();
 
+    }
+    public Jeu(String typeGrille) {
+        if (typeGrille.equals("hexagonal")) {
+            plateau = new PlateauH();
+        } else {
+            plateau = new PlateauC();
+        }
+        plateau.setJeu(this);
+        plateau.placerPieces();
+        start();
     }
 
     public void stopJeu() {

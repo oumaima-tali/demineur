@@ -1,62 +1,58 @@
-package Modele.plateau;
+package modele.plateau;
 
 import java.awt.Point;
 import java.util.HashMap;
 import java.util.Observable;
+import modele.jeu.Jeu;
 
-import Modele.jeu.Jeu;
+public abstract class Plateau extends Observable {
 
-public class Plateau extends Observable {
-    public static final int SIZE_X = 8 ;
-    public static final int SIZE_Y = 13 ;
-    public static final int NB_MINES = 20 ;
+    public static final int NB_MINES = 20;
+
     public int casesDecouvertes = 0;
-    public static final int NB_CASES = SIZE_X * SIZE_Y;
-    private Jeu jeu;
 
-    private HashMap<Case, Point> map = new  HashMap<Case, Point>();
-    private Case[][] grilleCases = new Case[SIZE_X][SIZE_Y];
+    protected final int sizeX;
+    protected final int sizeY;
+    protected final int nbCases;
 
-    public Plateau() {
+    protected Jeu jeu;
+    protected HashMap<Case, Point> map = new HashMap<>();
+    protected Case[][] grilleCases;
+
+    public Plateau(int sizeX, int sizeY) {
+        this.sizeX = sizeX;
+        this.sizeY = sizeY;
+        this.nbCases = sizeX * sizeY;
+        this.grilleCases = new Case[sizeX][sizeY];
         initPlateauVide();
     }
+
+    // -------------------------------------------------------
+    // Méthodes communes
+    // -------------------------------------------------------
+
+    private void initPlateauVide() {
+        for (int x = 0; x < sizeX; x++) {
+            for (int y = 0; y < sizeY; y++) {
+                grilleCases[x][y] = new Case(this);
+                map.put(grilleCases[x][y], new Point(x, y));
+            }
+        }
+    }
+
+    public int getSizeX() { return sizeX; }
+    public int getSizeY() { return sizeY; }
 
     public Case[][] getCases() {
         return grilleCases;
     }
 
-    private void initPlateauVide() {
-        for (int x = 0; x < SIZE_X; x++) {
-            for (int y = 0; y < SIZE_Y; y++) {
-                grilleCases[x][y] = new Case(this);
-                map.put(grilleCases[x][y], new Point(x, y));
-            }
-
-        }
-
-    }
-
-    public Case[] getVoisins(Case c) {
-        Point p = map.get(c);
-        int x = p.x;
-        int y = p.y;
-        Case[] voisins = new Case[8];
-        int i = 0;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                if (dx == 0 && dy == 0) continue; // skip the case itself
-                int nx = x + dx;
-                int ny = y + dy;
-                if (nx >= 0 && nx < SIZE_X && ny >= 0 && ny < SIZE_Y) {
-                    voisins[i++] = grilleCases[nx][ny];
-                }
-            }
-        }
-        return voisins;
-    }
-
     public Point getPositionCase(Case c) {
         return map.get(c);
+    }
+
+    public void setJeu(Jeu jeuObj) {
+        this.jeu = jeuObj;
     }
 
     public void placerPieces() {
@@ -64,17 +60,11 @@ public class Plateau extends Observable {
         calculerValeurs();
     }
 
-    
-
-    public void setJeu(Jeu jeuObj) {
-        this.jeu = jeuObj;
-    }
-
     public void placerMines() {
         int minesPlacees = 0;
         while (minesPlacees < NB_MINES) {
-            int x = (int) (Math.random() * SIZE_X);
-            int y = (int) (Math.random() * SIZE_Y);
+            int x = (int) (Math.random() * sizeX);
+            int y = (int) (Math.random() * sizeY);
             if (!grilleCases[x][y].isMine()) {
                 grilleCases[x][y].setMine(true);
                 grilleCases[x][y].setValeur(-1);
@@ -84,14 +74,12 @@ public class Plateau extends Observable {
     }
 
     private void calculerValeurs() {
-        for (int x = 0; x < SIZE_X; x++) {
-            for (int y = 0; y < SIZE_Y; y++) {
+        for (int x = 0; x < sizeX; x++) {
+            for (int y = 0; y < sizeY; y++) {
                 Case c = grilleCases[x][y];
                 if (!c.isMine()) {
-                    // Compter les mines adjacentes
                     int minesAutour = 0;
-                    Case[] voisins = getVoisins(c);
-                    for (Case voisin : voisins) {
+                    for (Case voisin : getVoisins(c)) {
                         if (voisin != null && voisin.isMine()) {
                             minesAutour++;
                         }
@@ -103,47 +91,32 @@ public class Plateau extends Observable {
     }
 
     public void decouvrirCase(Case c) {
-        if (jeu != null && !jeu.isEnCours()) {
-            return;
-        }
+        if (jeu != null && !jeu.isEnCours()) return;
+        if (c.isVisible() || c.isFlagged()) return;
 
-        // Si la case est déjà visible ou a un drapeau, on ne fait rien
-        if (c.isVisible() || c.isFlagged()) {
-            return;
-        }
-        
-        // Découvrir la case
         c.decouvrir();
         casesDecouvertes++;
 
         if (c.isMine()) {
             decouvrirToutesLesMines();
-            if (jeu != null) {
-                jeu.perdre();
-            }
+            if (jeu != null) jeu.perdre();
             return;
         }
 
-        if (casesDecouvertes == NB_CASES - NB_MINES) {
-            if (jeu != null) {
-                jeu.gagner();
-            }
+        if (casesDecouvertes == nbCases - NB_MINES) {
+            if (jeu != null) jeu.gagner();
         }
-        
-        // Si la valeur est 0, découvrir récursivement les voisins
+
         if (c.getValeur() == 0) {
-            Case[] voisins = getVoisins(c);
-            for (Case voisin : voisins) {
-                if (voisin != null) {
-                    decouvrirCase(voisin);
-                }
+            for (Case voisin : getVoisins(c)) {
+                if (voisin != null) decouvrirCase(voisin);
             }
         }
     }
 
     private void decouvrirToutesLesMines() {
-        for (int x = 0; x < SIZE_X; x++) {
-            for (int y = 0; y < SIZE_Y; y++) {
+        for (int x = 0; x < sizeX; x++) {
+            for (int y = 0; y < sizeY; y++) {
                 Case caseCourante = grilleCases[x][y];
                 if (caseCourante.isMine()) {
                     caseCourante.decouvrirForce();
@@ -157,4 +130,9 @@ public class Plateau extends Observable {
         notifyObservers();
     }
 
+    // -------------------------------------------------------
+    // Méthode abstraite : chaque type de plateau définit ses voisins
+    // -------------------------------------------------------
+
+    public abstract Case[] getVoisins(Case c);
 }

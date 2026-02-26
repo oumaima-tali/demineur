@@ -1,4 +1,4 @@
-package Modele.plateau;
+package modele.plateau;
 
 
 public class Case {

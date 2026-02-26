@@ -3,12 +3,12 @@ package VueControleur;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import javax.swing.*;
 import java.util.Observable;
 import java.util.Observer;
-import Modele.jeu.Jeu;
-import Modele.plateau.Case;
-import Modele.plateau.Plateau;
+import javax.swing.*;
+import modele.jeu.Jeu;
+import modele.plateau.Case;
+import modele.plateau.Plateau;
 
 public class VueControleur extends JPanel implements Observer {
     private Plateau plateau;
@@ -28,11 +28,11 @@ public class VueControleur extends JPanel implements Observer {
         jeu = _jeu;
         restartAction = _restartAction;
         plateau = jeu.getPlateau();
-        sizeX = Plateau.SIZE_X;
-        sizeY = Plateau.SIZE_Y;
+        sizeX = plateau.getSizeX();
+        sizeY = plateau.getSizeY();
         
         // Charger l'image du drapeau
-        flagIcon = new ImageIcon("images/flag.png");
+        flagIcon = new ImageIcon("demineur/images/flag.png");
         Image img = flagIcon.getImage();
         Image scaledImg = img.getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
         flagIcon = new ImageIcon(scaledImg);
@@ -98,7 +98,7 @@ public class VueControleur extends JPanel implements Observer {
     }
 
     private void mettreAJourAffichage() {
-        bombIcon = new ImageIcon("images/bomb.png");
+        bombIcon = new ImageIcon("demineur/images/bomb.png");
         Image img = bombIcon.getImage();
         Image scaledImg = img.getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
         bombIcon = new ImageIcon(scaledImg);
@@ -114,7 +114,7 @@ public class VueControleur extends JPanel implements Observer {
                     if (valeur == -1) {
                         label.setIcon(bombIcon);
                     } else {
-                        numberIcon = new ImageIcon("images/" + valeur + ".png");
+                        numberIcon = new ImageIcon("demineur/images/" + valeur + ".png");
                         Image numImg = numberIcon.getImage();   
                         Image scaledNumImg = numImg.getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
                         numberIcon = new ImageIcon(scaledNumImg);

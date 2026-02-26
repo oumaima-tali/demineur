@@ -1,12 +1,10 @@
 package VueControleur;
 
-import Modele.jeu.Jeu;
 import java.awt.*;
 import javax.swing.*;
+import modele.jeu.Jeu;
 
 public class MenuPrincipal extends JFrame {
-    private boolean jeuLance = false;
-
 
     public MenuPrincipal() {
         setTitle("Démineur - Menu Principal");
@@ -17,7 +15,7 @@ public class MenuPrincipal extends JFrame {
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBackground(Color.LIGHT_GRAY); // Set a background color suitable for Minesweeper
+        mainPanel.setBackground(Color.LIGHT_GRAY);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
         setContentPane(mainPanel);
 
@@ -27,22 +25,25 @@ public class MenuPrincipal extends JFrame {
         mainPanel.add(titreLabel);
         mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        JButton startButton = new JButton("Démarrer le jeu");
-        startButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        startButton.addActionListener(e -> lancerJeu());
-        mainPanel.add(startButton);
+        JButton startCarreButton = new JButton("Grille Carrée");
+        startCarreButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        startCarreButton.addActionListener(e -> lancerJeu("carre"));
+        mainPanel.add(startCarreButton);
+
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        JButton startHexButton = new JButton("Grille Hexagonale");
+        startHexButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        startHexButton.addActionListener(e -> lancerJeu("hexagonal"));
+        mainPanel.add(startHexButton);
 
         setVisible(true);
     }
 
-    private void lancerJeu() {
-        Jeu jeu = new Jeu();
-        setContentPane(new VueControleur(jeu, this::lancerJeu));
+    private void lancerJeu(String typeGrille) {
+        Jeu jeu = new Jeu(typeGrille);
+        setContentPane(new VueControleur(jeu, () -> lancerJeu(typeGrille)));
         revalidate();
         repaint();
-    }
-
-    public boolean estJeuLance() {
-        return jeuLance;
     }
 }
