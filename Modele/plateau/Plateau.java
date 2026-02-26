@@ -93,17 +93,18 @@ public abstract class Plateau extends Observable {
 
    
     public void decouvrirCase(Case c) {
-        if (jeu != null && !jeu.isEnCours()) return;
-        if (c.isVisible() || c.isFlagged()) return;
+    if (jeu != null && !jeu.isEnCours()) return;
+    if (c.isVisible() || c.isFlagged()) return;
 
-        c.decouvrir();   
+    c.decouvrir(); 
+
+    if (!c.isMine()) {
         casesDecouvertes++;
-
-        if (!c.isMine() && casesDecouvertes == nbCases - NB_MINES) {
+        if (casesDecouvertes == nbCases - NB_MINES) {
             if (jeu != null) jeu.gagner();
         }
     }
-
+}
     
     void decouvrirToutesLesMines() {
         for (int x = 0; x < sizeX; x++) {
