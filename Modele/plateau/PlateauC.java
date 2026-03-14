@@ -3,7 +3,8 @@ package modele.plateau;
 import java.awt.Point;
 
 /**
- * Plateau carré : chaque case a jusqu'à 8 voisins "8 directions".
+ * Plateau carré : chaque case a jusqu'à 8 voisins.
+ * Utilise l'enum Direction pour parcourir les 8 directions.
  */
 public class PlateauC extends Plateau {
 
@@ -25,17 +26,14 @@ public class PlateauC extends Plateau {
         int x = p.x;
         int y = p.y;
 
-        Case[] voisins = new Case[8];
+        Case[] voisins = new Case[Direction.values().length];
         int i = 0;
 
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                if (dx == 0 && dy == 0) continue;
-                int nx = x + dx;
-                int ny = y + dy;
-                if (nx >= 0 && nx < sizeX && ny >= 0 && ny < sizeY) {
-                    voisins[i++] = grilleCases[nx][ny];
-                }
+        for (Plateau.Direction dir : Plateau.Direction.values()) {
+            int nx = x + dir.dx;
+            int ny = y + dir.dy;
+            if (nx >= 0 && nx < sizeX && ny >= 0 && ny < sizeY) {
+                voisins[i++] = grilleCases[nx][ny];
             }
         }
         return voisins;

@@ -14,9 +14,6 @@ public class Jeu extends Thread{
     public Jeu() {
         plateau = new PlateauC();
         plateau.setJeu(this);
-
-        plateau.placerPieces();
-
         start();
 
     }
@@ -27,7 +24,6 @@ public class Jeu extends Thread{
             plateau = new PlateauC();
         }
         plateau.setJeu(this);
-        plateau.placerPieces();
         start();
     }
 
