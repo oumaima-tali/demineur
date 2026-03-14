@@ -28,6 +28,21 @@ public class PlateauH extends Plateau {
     }
 
     @Override
+    public boolean isHexagonal() {
+        return true;
+    }
+
+    @Override
+    public int getHexRadius() {
+        return 24;
+    }
+
+    @Override
+    public int getGridPadding() {
+        return 14;
+    }
+
+    @Override
     public Case[] getVoisins(Case c) {
         Point p = getPositionCase(c);
         int x = p.x;

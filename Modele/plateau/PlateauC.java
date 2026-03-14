@@ -15,6 +15,11 @@ public class PlateauC extends Plateau {
     }
 
     @Override
+    public int getSquareCellSize() {
+        return 40;
+    }
+
+    @Override
     public Case[] getVoisins(Case c) {
         Point p = getPositionCase(c);
         int x = p.x;

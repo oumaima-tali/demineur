@@ -130,6 +130,22 @@ public abstract class Plateau extends Observable {
         notifyObservers();
     }
 
+    public boolean isHexagonal() {
+        return false;
+    }
+
+    public int getSquareCellSize() {
+        return 40;
+    }
+
+    public int getHexRadius() {
+        return 24;
+    }
+
+    public int getGridPadding() {
+        return 14;
+    }
+
     // -------------------------------------------------------
     // Méthode abstraite : chaque type de plateau définit ses voisins
     // -------------------------------------------------------

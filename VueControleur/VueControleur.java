@@ -16,11 +16,16 @@ public class VueControleur extends JPanel implements Observer {
     private final Runnable restartAction;
     private final int sizeX;
     private final int sizeY;
-    private static final int pxCase = 40;
+    private final int pxCase;
+    private final int hexRadius;
+    private final int gridPadding;
     private JLabel[][] tabJLabel;
+    private JPanel grillePanel;
+    private HexGridPanel hexGridPanel;
+    private final boolean isHexagonal;
     private ImageIcon flagIcon;
     private ImageIcon bombIcon;
-    private ImageIcon numberIcon;
+    private ImageIcon[] numberIcons;
     private JButton restartButton;
     private JLabel statusLabel;
 
@@ -30,62 +35,86 @@ public class VueControleur extends JPanel implements Observer {
         plateau = jeu.getPlateau();
         sizeX = plateau.getSizeX();
         sizeY = plateau.getSizeY();
-        
-        // Charger l'image du drapeau
-        flagIcon = new ImageIcon("demineur/images/flag.png");
-        Image img = flagIcon.getImage();
-        Image scaledImg = img.getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
-        flagIcon = new ImageIcon(scaledImg);
+        isHexagonal = plateau.isHexagonal();
+        pxCase = plateau.getSquareCellSize();
+        hexRadius = plateau.getHexRadius();
+        gridPadding = plateau.getGridPadding();
+
+        chargerIcônes();
         
         placerLesComposantsGraphiques();
         plateau.addObserver(this);
         mettreAJourAffichage();
     }
 
+    private void chargerIcônes() {
+        int iconSize = isHexagonal ? (int) (hexRadius * 1.3) : (pxCase - 10);
+
+        flagIcon = chargerEtRedimensionner("images/flag.png", iconSize);
+        bombIcon = chargerEtRedimensionner("images/bomb.png", iconSize);
+
+        numberIcons = new ImageIcon[9];
+        for (int i = 0; i <= 8; i++) {
+            numberIcons[i] = chargerEtRedimensionner("images/" + i + ".png", iconSize);
+        }
+    }
+
+    private ImageIcon chargerEtRedimensionner(String chemin, int taille) {
+        ImageIcon icon = new ImageIcon(chemin);
+        Image img = icon.getImage();
+        Image scaledImg = img.getScaledInstance(taille, taille, Image.SCALE_SMOOTH);
+        return new ImageIcon(scaledImg);
+    }
+
     private void placerLesComposantsGraphiques() {
         setLayout(new BorderLayout());
 
-        JPanel grilleJLabels = new JPanel(new GridLayout(sizeY, sizeX));
-        tabJLabel = new JLabel[sizeX][sizeY];
+        if (isHexagonal) {
+            hexGridPanel = new HexGridPanel();
+            grillePanel = new JPanel(new GridBagLayout());
+            grillePanel.add(hexGridPanel);
+        } else {
+            JPanel grilleJLabels = new JPanel(new GridLayout(sizeY, sizeX));
+            tabJLabel = new JLabel[sizeX][sizeY];
 
-        for (int y = 0; y < sizeY; y++) {
-            for (int x = 0; x < sizeX; x++) {
-                JLabel jlab = new JLabel("", SwingConstants.CENTER);
-                jlab.setPreferredSize(new Dimension(pxCase, pxCase));
-                jlab.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-                jlab.setOpaque(true);
-                jlab.setBackground(Color.LIGHT_GRAY);
+            for (int y = 0; y < sizeY; y++) {
+                for (int x = 0; x < sizeX; x++) {
+                    JLabel jlab = new JLabel("", SwingConstants.CENTER);
+                    jlab.setPreferredSize(new Dimension(pxCase, pxCase));
+                    jlab.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+                    jlab.setOpaque(true);
+                    jlab.setBackground(Color.LIGHT_GRAY);
 
-                tabJLabel[x][y] = jlab;
+                    tabJLabel[x][y] = jlab;
 
-                final int xx = x;
-                final int yy = y;
+                    final int xx = x;
+                    final int yy = y;
 
-                jlab.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        if (!jeu.isEnCours()) {
-                            return;
+                    jlab.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            if (!jeu.isEnCours()) {
+                                return;
+                            }
+
+                            Case c = plateau.getCases()[xx][yy];
+
+                            if (SwingUtilities.isRightMouseButton(e)) {
+                                c.toggleFlag();
+                            } else if (SwingUtilities.isLeftMouseButton(e)) {
+                                plateau.decouvrirCase(c);
+                            }
+
+                            plateau.notifierObservateurs();
                         }
-
-                        Case c = plateau.getCases()[xx][yy];
-                        
-                        if (SwingUtilities.isRightMouseButton(e)) {
-                            // Clic droit : toggle flag
-                            c.toggleFlag();
-                        } else if (SwingUtilities.isLeftMouseButton(e)) {
-                            // Clic gauche : découvrir avec propagation si valeur = 0
-                            plateau.decouvrirCase(c);
-                        }
-                        
-                        plateau.notifierObservateurs();
-                    }
-                });
-                grilleJLabels.add(jlab);
+                    });
+                    grilleJLabels.add(jlab);
+                }
             }
+            grillePanel = grilleJLabels;
         }
 
-        add(grilleJLabels, BorderLayout.CENTER);
+        add(grillePanel, BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         statusLabel = new JLabel(" ");
@@ -98,10 +127,12 @@ public class VueControleur extends JPanel implements Observer {
     }
 
     private void mettreAJourAffichage() {
-        bombIcon = new ImageIcon("demineur/images/bomb.png");
-        Image img = bombIcon.getImage();
-        Image scaledImg = img.getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
-        bombIcon = new ImageIcon(scaledImg);
+        if (isHexagonal) {
+            if (hexGridPanel != null) {
+                hexGridPanel.repaint();
+            }
+            return;
+        }
 
         for (int x = 0; x < sizeX; x++) {
             for (int y = 0; y < sizeY; y++) {
@@ -113,15 +144,10 @@ public class VueControleur extends JPanel implements Observer {
                     label.setIcon(null);
                     if (valeur == -1) {
                         label.setIcon(bombIcon);
-                    } else {
-                        numberIcon = new ImageIcon("demineur/images/" + valeur + ".png");
-                        Image numImg = numberIcon.getImage();   
-                        Image scaledNumImg = numImg.getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
-                        numberIcon = new ImageIcon(scaledNumImg);
-                        label.setIcon(numberIcon);
+                    } else if (valeur >= 0) {
+                        label.setIcon(numberIcons[valeur]);
                     }
                 } else if (c.isFlagged()) {
-                    // Afficher le drapeau
                     label.setText("");
                     label.setIcon(flagIcon);
                 } else {
@@ -145,6 +171,127 @@ public class VueControleur extends JPanel implements Observer {
         } else {
             statusLabel.setText(" ");
             restartButton.setVisible(false);
+        }
+    }
+
+    private class HexGridPanel extends JPanel {
+        private final Polygon[][] hexagones;
+        private final double hexWidth;
+        private final double rowStep;
+
+        HexGridPanel() {
+            this.hexWidth = Math.sqrt(3) * hexRadius;
+            this.rowStep = 1.5 * hexRadius;
+            this.hexagones = new Polygon[sizeX][sizeY];
+
+            calculerHexagones();
+            setOpaque(true);
+            setBackground(Color.WHITE);
+
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (!jeu.isEnCours()) {
+                        return;
+                    }
+
+                    Point point = e.getPoint();
+                    int[] cell = trouverCase(point.x, point.y);
+                    if (cell == null) {
+                        return;
+                    }
+
+                    Case c = plateau.getCases()[cell[0]][cell[1]];
+
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        c.toggleFlag();
+                    } else if (SwingUtilities.isLeftMouseButton(e)) {
+                        plateau.decouvrirCase(c);
+                    }
+
+                    plateau.notifierObservateurs();
+                }
+            });
+        }
+
+        private void calculerHexagones() {
+            for (int y = 0; y < sizeY; y++) {
+                for (int x = 0; x < sizeX; x++) {
+                    double centerX = gridPadding + (hexWidth / 2.0) + (x * hexWidth) + ((y % 2) * (hexWidth / 2.0));
+                    double centerY = gridPadding + hexRadius + (y * rowStep);
+                    hexagones[x][y] = creerHexagone(centerX, centerY);
+                }
+            }
+        }
+
+        private Polygon creerHexagone(double centerX, double centerY) {
+            int[] xPoints = new int[6];
+            int[] yPoints = new int[6];
+
+            for (int i = 0; i < 6; i++) {
+                double angle = Math.toRadians(60 * i - 30);
+                xPoints[i] = (int) Math.round(centerX + hexRadius * Math.cos(angle));
+                yPoints[i] = (int) Math.round(centerY + hexRadius * Math.sin(angle));
+            }
+            return new Polygon(xPoints, yPoints, 6);
+        }
+
+        private int[] trouverCase(int px, int py) {
+            for (int y = 0; y < sizeY; y++) {
+                for (int x = 0; x < sizeX; x++) {
+                    if (hexagones[x][y].contains(px, py)) {
+                        return new int[] {x, y};
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            int width = (int) Math.ceil(gridPadding * 2 + (sizeX * hexWidth) + (hexWidth / 2.0));
+            int height = (int) Math.ceil(gridPadding * 2 + (2 * hexRadius) + ((sizeY - 1) * rowStep));
+            return new Dimension(width, height);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            for (int y = 0; y < sizeY; y++) {
+                for (int x = 0; x < sizeX; x++) {
+                    Case c = plateau.getCases()[x][y];
+                    Polygon hex = hexagones[x][y];
+
+                    g2.setColor(c.isVisible() ? new Color(230, 230, 230) : Color.LIGHT_GRAY);
+                    g2.fillPolygon(hex);
+
+                    g2.setColor(Color.DARK_GRAY);
+                    g2.drawPolygon(hex);
+
+                    if (c.isVisible()) {
+                        if (c.getValeur() == -1) {
+                            dessinerImageCentree(g2, bombIcon.getImage(), hex.getBounds());
+                        } else if (c.getValeur() >= 0) {
+                            dessinerImageCentree(g2, numberIcons[c.getValeur()].getImage(), hex.getBounds());
+                        }
+                    } else if (c.isFlagged()) {
+                        dessinerImageCentree(g2, flagIcon.getImage(), hex.getBounds());
+                    }
+                }
+            }
+
+            g2.dispose();
+        }
+
+        private void dessinerImageCentree(Graphics2D g2, Image image, Rectangle bounds) {
+            int w = image.getWidth(null);
+            int h = image.getHeight(null);
+            int x = bounds.x + (bounds.width - w) / 2;
+            int y = bounds.y + (bounds.height - h) / 2;
+            g2.drawImage(image, x, y, null);
         }
     }
 }
