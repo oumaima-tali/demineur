@@ -1,6 +1,7 @@
 package modele.plateau;
 
 import java.awt.Point;
+import modele.jeu.Difficulte;
 
 /**
  * Plateau carré : chaque case a jusqu'à 8 voisins.
@@ -8,16 +9,12 @@ import java.awt.Point;
  */
 public class PlateauC extends Plateau {
 
-    public static final int SIZE_X = 8;
-    public static final int SIZE_Y = 13;
-
     public PlateauC() {
-        super(SIZE_X, SIZE_Y);
+        this(Difficulte.FACILE);
     }
 
-    @Override
-    public int getSquareCellSize() {
-        return 40;
+    public PlateauC(Difficulte difficulte) {
+        super(difficulte.getSquareSizeX(), difficulte.getSquareSizeY(), difficulte.getSquareNbMines());
     }
 
     @Override

@@ -9,23 +9,23 @@ import modele.jeu.Jeu;
 
 public abstract class Plateau extends Observable {
 
-    public static final int NB_MINES = 20;
-
     public int casesDecouvertes = 0;
 
     protected final int sizeX;
     protected final int sizeY;
     protected final int nbCases;
+    protected final int nbMines;
 
     protected Jeu jeu;
     protected HashMap<Case, Point> map = new HashMap<>();
     protected Case[][] grilleCases;
     protected boolean minesInitialisees = false;
 
-    public Plateau(int sizeX, int sizeY) {
+    public Plateau(int sizeX, int sizeY, int nbMines) {
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.nbCases = sizeX * sizeY;
+        this.nbMines = nbMines;
         this.grilleCases = new Case[sizeX][sizeY];
         initPlateauVide();
     }
@@ -42,6 +42,7 @@ public abstract class Plateau extends Observable {
 
     public int getSizeX() { return sizeX; }
     public int getSizeY() { return sizeY; }
+    public int getNbMines() { return nbMines; }
 
     public Case[][] getCases() {
         return grilleCases;
@@ -81,14 +82,14 @@ public abstract class Plateau extends Observable {
             }
 
             int casesDisponibles = nbCases - casesInterdites.size();
-            if (casesDisponibles < NB_MINES) {
+            if (casesDisponibles < nbMines) {
                 casesInterdites.clear();
                 casesInterdites.add(premiereCaseCliquee);
             }
         }
 
         int minesPlacees = 0;
-        while (minesPlacees < NB_MINES) {
+        while (minesPlacees < nbMines) {
             int x = (int) (Math.random() * sizeX);
             int y = (int) (Math.random() * sizeY);
             if (!grilleCases[x][y].isMine() && !casesInterdites.contains(grilleCases[x][y])) {
@@ -127,20 +128,41 @@ public abstract class Plateau extends Observable {
 
    
     public void decouvrirCase(Case c) {
-    if (jeu != null && !jeu.isEnCours()) return;
-    if (c.isVisible() || c.isFlagged()) return;
+        if (jeu != null && !jeu.isEnCours()) return;
+        if (c.isVisible() || c.isFlagged()) return;
 
-    initialiserMinesAuPremierClic(c);
+        initialiserMinesAuPremierClic(c);
 
-    c.decouvrir(); 
+        c.decouvrir(); 
 
-    if (!c.isMine()) {
-        casesDecouvertes++;
-        if (casesDecouvertes == nbCases - NB_MINES) {
-            if (jeu != null) jeu.gagner();
+        if (!c.isMine()) {
+            casesDecouvertes++;
+            if (casesDecouvertes == nbCases - nbMines) {
+                if (jeu != null) jeu.gagner();
+            }
         }
     }
-}
+
+    public void decouvrirCasesAdjacentes(Case c) {
+        if (jeu != null && !jeu.isEnCours()) return;
+        if (!c.isVisible()) return;
+        if (c.isMine()) return;
+
+        int nbDrapeauxAutour = 0;
+        for (Case voisin : getVoisins(c)) {
+            if (voisin != null && voisin.isFlagged()) {
+                nbDrapeauxAutour++;
+            }
+        }
+
+        if (nbDrapeauxAutour != c.getValeur()) return;
+
+        for (Case voisin : getVoisins(c)) {
+            if (voisin != null && !voisin.isFlagged()) {
+                decouvrirCase(voisin);
+            }
+        }
+    }
     
     void decouvrirToutesLesMines() {
         for (int x = 0; x < sizeX; x++) {
@@ -158,30 +180,10 @@ public abstract class Plateau extends Observable {
         notifyObservers();
     }
 
-<<<<<<< HEAD
     public boolean isHexagonal() {
         return false;
     }
 
-    public int getSquareCellSize() {
-        return 40;
-    }
-
-    public int getHexRadius() {
-        return 24;
-    }
-
-    public int getGridPadding() {
-        return 14;
-    }
-
-    // -------------------------------------------------------
-    // Méthode abstraite : chaque type de plateau définit ses voisins
-    // -------------------------------------------------------
-
-=======
-    
->>>>>>> 93e5f125277e9663af1312814d4c55827ffadd25
     public abstract Case[] getVoisins(Case c);
 
     

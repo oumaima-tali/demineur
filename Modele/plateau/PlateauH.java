@@ -1,34 +1,26 @@
 package modele.plateau;
 
 import java.awt.Point;
+import modele.jeu.Difficulte;
 
 
 
 public class PlateauH extends Plateau {
 
-    public static final int SIZE_X = 9;
-    public static final int SIZE_Y = 11;
-
     private static final int[][] VOISINS_PAIRE   = { {-1,0},{1,0},{0,-1},{0,1},{-1,-1},{-1,1} };
     private static final int[][] VOISINS_IMPAIRE = { {-1,0},{1,0},{0,-1},{0,1},{ 1,-1},{ 1,1} };
 
     public PlateauH() {
-        super(SIZE_X, SIZE_Y);
+        this(Difficulte.FACILE);
+    }
+
+    public PlateauH(Difficulte difficulte) {
+        super(difficulte.getHexSizeX(), difficulte.getHexSizeY(), difficulte.getHexNbMines());
     }
 
     @Override
     public boolean isHexagonal() {
         return true;
-    }
-
-    @Override
-    public int getHexRadius() {
-        return 24;
-    }
-
-    @Override
-    public int getGridPadding() {
-        return 14;
     }
 
     @Override

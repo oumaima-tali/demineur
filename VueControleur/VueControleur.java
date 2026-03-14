@@ -9,6 +9,7 @@ import java.util.Observable;
 import java.util.Observer;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
+import modele.jeu.Difficulte;
 import modele.jeu.Jeu;
 import modele.plateau.Case;
 import modele.plateau.Plateau;
@@ -20,11 +21,16 @@ public class VueControleur extends JPanel implements Observer {
     private Plateau plateau;
     private Jeu jeu;
     private final Runnable restartAction;
+    private final Runnable menuAction;
     private final int sizeX;
     private final int sizeY;
     private final int pxCase;
     private final int hexRadius;
     private final int gridPadding;
+    private final int hexCellWidth;
+    private final int hexCellHeight;
+    private final int hexColStep;
+    private final int hexRowStep;
     private JLabel[][] tabJLabel;
 
 
@@ -154,13 +160,81 @@ public class VueControleur extends JPanel implements Observer {
     }
 
 
+    private static class HexCellLabel extends JLabel {
 
-    public VueControleur(Jeu _jeu, Runnable _restartAction) {
+        private final Polygon shape;
+        private boolean lowered = false;
+
+        public HexCellLabel(int width, int height) {
+            super("", SwingConstants.CENTER);
+            shape = creerHexagone(width, height);
+            setPreferredSize(new Dimension(width, height));
+            setOpaque(false);
+            setBackground(new Color(192, 192, 192));
+        }
+
+        public void setLowered(boolean value) {
+            lowered = value;
+            repaint();
+        }
+
+        @Override
+        public boolean contains(int x, int y) {
+            return shape.contains(x, y);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(getBackground());
+            g2.fillPolygon(shape);
+
+            Shape ancienClip = g2.getClip();
+            g2.setClip(shape);
+            super.paintComponent(g2);
+            g2.setClip(ancienClip);
+
+            Color clair = lowered ? Color.DARK_GRAY : Color.WHITE;
+            Color fonce = lowered ? Color.WHITE : Color.DARK_GRAY;
+            g2.setColor(clair);
+            g2.drawLine(shape.xpoints[0], shape.ypoints[0], shape.xpoints[1], shape.ypoints[1]);
+            g2.drawLine(shape.xpoints[1], shape.ypoints[1], shape.xpoints[2], shape.ypoints[2]);
+            g2.drawLine(shape.xpoints[2], shape.ypoints[2], shape.xpoints[3], shape.ypoints[3]);
+
+            g2.setColor(fonce);
+            g2.drawLine(shape.xpoints[3], shape.ypoints[3], shape.xpoints[4], shape.ypoints[4]);
+            g2.drawLine(shape.xpoints[4], shape.ypoints[4], shape.xpoints[5], shape.ypoints[5]);
+            g2.drawLine(shape.xpoints[5], shape.ypoints[5], shape.xpoints[0], shape.ypoints[0]);
+
+            g2.dispose();
+        }
+
+        private static Polygon creerHexagone(int width, int height) {
+            int[] x = { width / 2, width - 1, width - 1, width / 2, 0, 0 };
+            int[] y = { 0, height / 4, (3 * height) / 4, height - 1, (3 * height) / 4, height / 4 };
+            return new Polygon(x, y, 6);
+        }
+    }
+
+
+
+    public VueControleur(Jeu _jeu, Difficulte _difficulte, Runnable _restartAction, Runnable _menuAction) {
         jeu           = _jeu;
         restartAction = _restartAction;
+        menuAction    = _menuAction;
         plateau       = jeu.getPlateau();
         sizeX         = plateau.getSizeX();
         sizeY         = plateau.getSizeY();
+        ConfigAffichage config = new ConfigAffichage(_difficulte, plateau.isHexagonal());
+        hexRadius     = config.getHexRadius();
+        gridPadding   = config.getGridPadding();
+        pxCase        = config.getCellSize();
+        hexCellWidth  = (int) Math.round(Math.sqrt(3) * hexRadius);
+        hexCellHeight = 2 * hexRadius;
+        hexColStep    = hexCellWidth;
+        hexRowStep    = (int) Math.round(1.5 * hexRadius);
 
 
         chargerImages();
@@ -189,7 +263,10 @@ public class VueControleur extends JPanel implements Observer {
             return null;
         }
         ImageIcon icon = new ImageIcon(url);
-        Image scaled = icon.getImage().getScaledInstance(pxCase - 10, pxCase - 10, Image.SCALE_SMOOTH);
+        int iconSize = plateau.isHexagonal()
+                ? Math.max(12, Math.min(hexCellWidth, hexCellHeight) - 8)
+                : Math.max(12, pxCase - 10);
+        Image scaled = icon.getImage().getScaledInstance(iconSize, iconSize, Image.SCALE_SMOOTH);
         return new ImageIcon(scaled);
     }
 
@@ -204,13 +281,38 @@ public class VueControleur extends JPanel implements Observer {
         add(creerBarreHaut(), BorderLayout.NORTH);
 
 
+        JPanel grillePanel = plateau.isHexagonal() ? creerGrilleHexagonale() : creerGrilleCarree();
+
+
+        JPanel grilleWrapper = new JPanel(new BorderLayout());
+        grilleWrapper.setBackground(new Color(192, 192, 192));
+        grilleWrapper.setBorder(BorderFactory.createEmptyBorder(gridPadding, gridPadding, gridPadding, gridPadding));
+        grilleWrapper.add(grillePanel, BorderLayout.CENTER);
+        add(grilleWrapper, BorderLayout.CENTER);
+
+        add(creerBarreBas(), BorderLayout.SOUTH);
+    }
+
+    private JPanel creerBarreBas() {
+        JPanel barre = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));
+        barre.setBackground(new Color(192, 192, 192));
+
+        JButton menuButton = new JButton("Menu principal");
+        menuButton.addActionListener(e -> {
+            arreterTimer();
+            menuAction.run();
+        });
+        barre.add(menuButton);
+        return barre;
+    }
+
+
+    private JPanel creerGrilleCarree() {
         JPanel grillePanel = new JPanel(new GridLayout(sizeY, sizeX));
         grillePanel.setBackground(new Color(192, 192, 192));
         grillePanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 
-
         tabJLabel = new JLabel[sizeX][sizeY];
-
 
         for (int y = 0; y < sizeY; y++) {
             for (int x = 0; x < sizeX; x++) {
@@ -219,73 +321,93 @@ public class VueControleur extends JPanel implements Observer {
                 jlab.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
                 jlab.setOpaque(true);
                 jlab.setBackground(new Color(192, 192, 192));
-
-
                 tabJLabel[x][y] = jlab;
+                ajouterEcouteSourisCase(jlab, x, y);
+                grillePanel.add(jlab);
+            }
+        }
+        return grillePanel;
+    }
 
 
-                final int xx = x;
-                final int yy = y;
+    private JPanel creerGrilleHexagonale() {
+        JPanel grillePanel = new JPanel(null);
+        grillePanel.setBackground(new Color(192, 192, 192));
+        grillePanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 
+        tabJLabel = new JLabel[sizeX][sizeY];
 
-                jlab.addMouseListener(new MouseAdapter() {
-
-
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        if (!jeu.isEnCours()) return;
-
-
-                        Case c = plateau.getCases()[xx][yy];
-
-
-                        if (SwingUtilities.isRightMouseButton(e)) {
-                            c.toggleFlag();
-                        } else if (SwingUtilities.isLeftMouseButton(e)) {
-                            plateau.decouvrirCase(c);
-                        }
-
-
-                        plateau.notifierObservateurs();
-                    }
-
-
-                    @Override
-                    public void mousePressed(MouseEvent e) {
-                        Case c = plateau.getCases()[xx][yy];
-                        if (SwingUtilities.isLeftMouseButton(e)
-                                && !c.isVisible()
-                                && !c.isFlagged()
-                                && jeu.isEnCours()) {
-                            jlab.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
-                            smileButton.setEtat(EtatSmiley.CLIC);
-                        }
-                    }
-
-
-                    @Override
-                    public void mouseReleased(MouseEvent e) {
-                        Case c = plateau.getCases()[xx][yy];
-                        if (!c.isVisible()) {
-                            jlab.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
-                        }
-                        if (jeu.isEnCours()) {
-                            smileButton.setEtat(EtatSmiley.NORMAL);
-                        }
-                    }
-                });
-
-
+        for (int y = 0; y < sizeY; y++) {
+            int decalageLigne = (y % 2 == 1) ? (hexCellWidth / 2) : 0;
+            for (int x = 0; x < sizeX; x++) {
+                HexCellLabel jlab = new HexCellLabel(hexCellWidth, hexCellHeight);
+                jlab.setBounds(x * hexColStep + decalageLigne, y * hexRowStep, hexCellWidth, hexCellHeight);
+                tabJLabel[x][y] = jlab;
+                ajouterEcouteSourisCase(jlab, x, y);
                 grillePanel.add(jlab);
             }
         }
 
+        int largeur = sizeX * hexColStep + (hexCellWidth / 2) + 2;
+        int hauteur = (sizeY - 1) * hexRowStep + hexCellHeight + 2;
+        grillePanel.setPreferredSize(new Dimension(largeur, hauteur));
+        return grillePanel;
+    }
 
-        JPanel grilleWrapper = new JPanel(new BorderLayout());
-        grilleWrapper.setBackground(new Color(192, 192, 192));
-        grilleWrapper.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-        grilleWrapper.add(grillePanel, BorderLayout.CENTER);
-        add(grilleWrapper, BorderLayout.CENTER);
+
+    private void ajouterEcouteSourisCase(JLabel jlab, int x, int y) {
+        jlab.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!jeu.isEnCours()) {
+                    return;
+                }
+
+                Case c = plateau.getCases()[x][y];
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    c.toggleFlag();
+                } else if (SwingUtilities.isLeftMouseButton(e)) {
+                    if (c.isVisible()) {
+                        plateau.decouvrirCasesAdjacentes(c);
+                    } else {
+                        plateau.decouvrirCase(c);
+                    }
+                }
+
+                plateau.notifierObservateurs();
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                Case c = plateau.getCases()[x][y];
+                if (SwingUtilities.isLeftMouseButton(e)
+                        && !c.isVisible()
+                        && !c.isFlagged()
+                        && jeu.isEnCours()) {
+                    if (jlab instanceof HexCellLabel) {
+                        ((HexCellLabel) jlab).setLowered(true);
+                    } else {
+                        jlab.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+                    }
+                    smileButton.setEtat(EtatSmiley.CLIC);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                Case c = plateau.getCases()[x][y];
+                if (!c.isVisible()) {
+                    if (jlab instanceof HexCellLabel) {
+                        ((HexCellLabel) jlab).setLowered(false);
+                    } else {
+                        jlab.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
+                    }
+                }
+                if (jeu.isEnCours()) {
+                    smileButton.setEtat(EtatSmiley.NORMAL);
+                }
+            }
+        });
     }
 
 
@@ -383,7 +505,11 @@ public class VueControleur extends JPanel implements Observer {
 
                 if (c.isVisible()) {
                     int valeur = c.getValeur();
-                    lab.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+                    if (lab instanceof HexCellLabel) {
+                        ((HexCellLabel) lab).setLowered(true);
+                    } else {
+                        lab.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+                    }
                     lab.setIcon(null);
                     lab.setText("");
 
@@ -398,7 +524,11 @@ public class VueControleur extends JPanel implements Observer {
 
 
                 } else if (c.isFlagged()) {
-                    lab.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
+                    if (lab instanceof HexCellLabel) {
+                        ((HexCellLabel) lab).setLowered(false);
+                    } else {
+                        lab.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
+                    }
                     lab.setBackground(new Color(192, 192, 192));
                     lab.setText("");
                     lab.setIcon(flagIcon);
@@ -406,7 +536,11 @@ public class VueControleur extends JPanel implements Observer {
 
 
                 } else {
-                    lab.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
+                    if (lab instanceof HexCellLabel) {
+                        ((HexCellLabel) lab).setLowered(false);
+                    } else {
+                        lab.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
+                    }
                     lab.setBackground(new Color(192, 192, 192));
                     lab.setText("");
                     lab.setIcon(null);
@@ -415,7 +549,7 @@ public class VueControleur extends JPanel implements Observer {
         }
 
 
-        compteurMinesLabel.setText(formaterLCD(Plateau.NB_MINES - flagsPlaces));
+        compteurMinesLabel.setText(formaterLCD(plateau.getNbMines() - flagsPlaces));
     }
 
 

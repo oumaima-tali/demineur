@@ -12,16 +12,18 @@ public class Jeu extends Thread{
     private boolean gagne = false;
 
     public Jeu() {
-        plateau = new PlateauC();
-        plateau.setJeu(this);
-        start();
-
+        this("carre", Difficulte.FACILE);
     }
+
     public Jeu(String typeGrille) {
+        this(typeGrille, Difficulte.FACILE);
+    }
+
+    public Jeu(String typeGrille, Difficulte difficulte) {
         if (typeGrille.equals("hexagonal")) {
-            plateau = new PlateauH();
+            plateau = new PlateauH(difficulte);
         } else {
-            plateau = new PlateauC();
+            plateau = new PlateauC(difficulte);
         }
         plateau.setJeu(this);
         start();
