@@ -43,7 +43,7 @@ public class MenuPrincipal extends JFrame {
         mainPanel.add(titreLabel);
         mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        JLabel difficulteLabel = new JLabel("Difficulté");
+        JLabel difficulteLabel = new JLabel("Niveau");
         difficulteLabel.setFont(new Font("Serif", Font.BOLD, 20));
         difficulteLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         mainPanel.add(difficulteLabel);
