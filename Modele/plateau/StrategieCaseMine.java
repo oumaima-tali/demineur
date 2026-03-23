@@ -1,5 +1,4 @@
 package modele.plateau;
-//SCM
 public class StrategieCaseMine extends Strategie {
 
     @Override

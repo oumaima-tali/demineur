@@ -1,8 +1,8 @@
 package modele.plateau;
 
 import java.awt.Point;
-import java.util.HashSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Observable;
 import java.util.Set;
 import modele.jeu.Jeu;
@@ -22,14 +22,13 @@ public abstract class Plateau extends Observable {
     protected boolean minesInitialisees = false;
 
     public Plateau(int sizeX, int sizeY, int nbMines) {
-        this.sizeX = sizeX;
-        this.sizeY = sizeY;
+        this.sizeX   = sizeX;
+        this.sizeY   = sizeY;
         this.nbCases = sizeX * sizeY;
         this.nbMines = nbMines;
         this.grilleCases = new Case[sizeX][sizeY];
         initPlateauVide();
     }
-
 
     private void initPlateauVide() {
         for (int x = 0; x < sizeX; x++) {
@@ -40,25 +39,28 @@ public abstract class Plateau extends Observable {
         }
     }
 
-    public int getSizeX() { return sizeX; }
-    public int getSizeY() { return sizeY; }
-    public int getNbMines() { return nbMines; }
+    public int getSizeX()  { return sizeX;  }
+    public int getSizeY()  { return sizeY;  }
+    public int getNbMines(){ return nbMines; }
 
-    public Case[][] getCases() {
-        return grilleCases;
+    //  Compteur de drapeaux 
+    public int getNbFlags() {
+        int count = 0;
+        for (int x = 0; x < sizeX; x++) {
+            for (int y = 0; y < sizeY; y++) {
+                if (grilleCases[x][y].isFlagged()) count++;
+            }
+        }
+        return count;
     }
 
-    public Point getPositionCase(Case c) {
-        return map.get(c);
-    }
+    public Case[][] getCases() { return grilleCases; }
 
-    public Jeu getJeu() {
-        return jeu;
-    }
+    public Point getPositionCase(Case c) { return map.get(c); }
 
-    public void setJeu(Jeu jeuObj) {
-        this.jeu = jeuObj;
-    }
+    public Jeu getJeu() { return jeu; }
+
+    public void setJeu(Jeu jeuObj) { this.jeu = jeuObj; }
 
     public void placerPieces() {
         placerMinesAvecZoneInterdite(null);
@@ -76,11 +78,8 @@ public abstract class Plateau extends Observable {
         if (premiereCaseCliquee != null) {
             casesInterdites.add(premiereCaseCliquee);
             for (Case voisin : getVoisins(premiereCaseCliquee)) {
-                if (voisin != null) {
-                    casesInterdites.add(voisin);
-                }
+                if (voisin != null) casesInterdites.add(voisin);
             }
-
             int casesDisponibles = nbCases - casesInterdites.size();
             if (casesDisponibles < nbMines) {
                 casesInterdites.clear();
@@ -101,9 +100,7 @@ public abstract class Plateau extends Observable {
     }
 
     private void initialiserMinesAuPremierClic(Case premiereCaseCliquee) {
-        if (minesInitialisees) {
-            return;
-        }
+        if (minesInitialisees) return;
         placerMinesAvecZoneInterdite(premiereCaseCliquee);
         calculerValeurs();
         minesInitialisees = true;
@@ -116,9 +113,7 @@ public abstract class Plateau extends Observable {
                 if (!c.isMine()) {
                     int minesAutour = 0;
                     for (Case voisin : getVoisins(c)) {
-                        if (voisin != null && voisin.isMine()) {
-                            minesAutour++;
-                        }
+                        if (voisin != null && voisin.isMine()) minesAutour++;
                     }
                     c.setValeur(minesAutour);
                 }
@@ -126,14 +121,13 @@ public abstract class Plateau extends Observable {
         }
     }
 
-   
     public void decouvrirCase(Case c) {
         if (jeu != null && !jeu.isEnCours()) return;
         if (c.isVisible() || c.isFlagged()) return;
 
         initialiserMinesAuPremierClic(c);
 
-        c.decouvrir(); 
+        c.decouvrir();
 
         if (!c.isMine()) {
             casesDecouvertes++;
@@ -145,32 +139,24 @@ public abstract class Plateau extends Observable {
 
     public void decouvrirCasesAdjacentes(Case c) {
         if (jeu != null && !jeu.isEnCours()) return;
-        if (!c.isVisible()) return;
-        if (c.isMine()) return;
+        if (!c.isVisible() || c.isMine()) return;
 
         int nbDrapeauxAutour = 0;
         for (Case voisin : getVoisins(c)) {
-            if (voisin != null && voisin.isFlagged()) {
-                nbDrapeauxAutour++;
-            }
+            if (voisin != null && voisin.isFlagged()) nbDrapeauxAutour++;
         }
-
         if (nbDrapeauxAutour != c.getValeur()) return;
 
         for (Case voisin : getVoisins(c)) {
-            if (voisin != null && !voisin.isFlagged()) {
-                decouvrirCase(voisin);
-            }
+            if (voisin != null && !voisin.isFlagged()) decouvrirCase(voisin);
         }
     }
-    
+
     void decouvrirToutesLesMines() {
         for (int x = 0; x < sizeX; x++) {
             for (int y = 0; y < sizeY; y++) {
                 Case caseCourante = grilleCases[x][y];
-                if (caseCourante.isMine()) {
-                    caseCourante.decouvrirForce();
-                }
+                if (caseCourante.isMine()) caseCourante.decouvrirForce();
             }
         }
     }
@@ -180,15 +166,11 @@ public abstract class Plateau extends Observable {
         notifyObservers();
     }
 
-    public boolean isHexagonal() {
-        return false;
-    }
+    public boolean isHexagonal() { return false; }
 
     public abstract Case[] getVoisins(Case c);
 
-    
     public enum Direction {
-
         NORD      ( 0, -1),
         NORD_EST  ( 1, -1),
         EST       ( 1,  0),

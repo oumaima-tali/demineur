@@ -1,7 +1,6 @@
 package modele.plateau;
 
 
-//SCL
  
 public class StrategieCaseLibre extends Strategie {
 

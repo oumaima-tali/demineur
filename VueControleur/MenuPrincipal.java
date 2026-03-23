@@ -11,11 +11,15 @@ public class MenuPrincipal extends JFrame {
 
     public MenuPrincipal() {
         setTitle("Démineur ");
-        setSize(500, 800);
+        //setSize(500, 800);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
         afficherMenu();
+        pack();                         
+        setLocationRelativeTo(null); 
+        //setMinimumSize(new Dimension(300, 350));
+
         setVisible(true);
     }
 
@@ -27,6 +31,8 @@ public class MenuPrincipal extends JFrame {
     private void lancerJeu(String typeGrille, Difficulte difficulte) {
         Jeu jeu = new Jeu(typeGrille, difficulte);
         setContentPane(new VueControleur(jeu, difficulte, () -> lancerJeu(typeGrille, difficulte), this::afficherMenu));
+        pack();                         
+        setLocationRelativeTo(null); 
         revalidate();
         repaint();
     }
@@ -67,6 +73,8 @@ public class MenuPrincipal extends JFrame {
         mainPanel.add(startHexButton);
 
         setContentPane(mainPanel);
+        pack();                          // ← adapte la fenêtre au contenu
+        setLocationRelativeTo(null); 
         revalidate();
         repaint();
     }
