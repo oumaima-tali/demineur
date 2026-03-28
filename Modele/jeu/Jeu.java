@@ -1,27 +1,19 @@
 package modele.jeu;
 
+import modele.plateau.Case;
 import modele.plateau.Plateau;
 import modele.plateau.PlateauC;
 import modele.plateau.PlateauH;
 
-public class Jeu extends Thread {
+/*
+ * Classe principale qui gere l'etat de la partie.
+ * Elle fait le lien entre les actions du joueur (clic) et le plateau.
+ * L'etat est stocke dans EtatJeu, la logique d'indice dans JeuIA.
+ */
+public class Jeu {
 
-    private Plateau plateau;
-
-    private boolean enCours = true;
-    private boolean perdu   = false;
-    private boolean gagne   = false;
-
-    // Temps de jeu 
-    private int temps = 0;
-
-    public Jeu() {
-        this("carre", Difficulte.FACILE);
-    }
-
-    public Jeu(String typeGrille) {
-        this(typeGrille, Difficulte.FACILE);
-    }
+    private final Plateau plateau;
+    private final EtatJeu etat = new EtatJeu();
 
     public Jeu(String typeGrille, Difficulte difficulte) {
         if (typeGrille.equals("hexagonal")) {
@@ -29,73 +21,89 @@ public class Jeu extends Thread {
         } else {
             plateau = new PlateauC(difficulte);
         }
-        plateau.setJeu(this);
-        start();
     }
 
-    // Gestion du jeu 
-
-    public void stopJeu() {
-        enCours = false;
-        synchronized (this) {
-            notify();
-        }
-    }
-
-    public boolean isEnCours() { return enCours; }
-    public boolean isPerdu()   { return perdu;   }
-    public boolean isGagne()   { return gagne;   }
-
-    public void gagner() {
-        if (!enCours) return;
-        gagne = true;
-        stopJeu();
-    }
-
-    public void perdre() {
-        if (!enCours) return;
-        perdu = true;
-        stopJeu();
-    }
-
-    // Temps 
-
-    public int getTemps() { return temps; }
-
-    public void incrementerTemps() {
-        if (enCours) {
-            temps = Math.min(temps + 1, 999);
-        }
-    }
-
-    // Actions de clic 
-
-    /**
-     * Clic gauche sur la case (x, y).
-     * Si la case est déjà visible → découverte des cases adjacentes.
-     * Sinon → découverte normale.
-     */
+    // clic gauche : decouvrir une case ou ses voisins si deja visible
     public void clicGauche(int x, int y) {
-        if (!enCours) return;
-        modele.plateau.Case c = plateau.getCases()[x][y];
+        if (!etat.isEnCours()) return;
+
+        Case c = plateau.getCases()[x][y];
+
         if (c.isVisible()) {
-            plateau.decouvrirCasesAdjacentes(c);
+            plateau.decouvrirVoisins(c);
         } else {
             plateau.decouvrirCase(c);
         }
+
+        // verifier si le joueur a perdu (mine touchee pendant la decouverte)
+        if (plateau.isMineTouchee()) {
+            perdre();
+        }
+        // verifier la victoire : toutes les cases non-mines sont decouvertes
+        else if (plateau.getCasesDecouvertes() == plateau.getSizeX() * plateau.getSizeY() - plateau.getNbMines()) {
+            gagner();
+        }
+
         plateau.notifierObservateurs();
     }
 
-    /**
-     * Clic droit sur la case (x, y) → bascule le drapeau.
-     */
+    // clic droit : poser ou enlever un drapeau
     public void clicDroit(int x, int y) {
-        if (!enCours) return;
+        if (!etat.isEnCours()) return;
         plateau.getCases()[x][y].toggleFlag();
         plateau.notifierObservateurs();
     }
 
+    // demande un indice en delegant la recherche a JeuIA
+    public void demanderIndice() {
+        if (!etat.isEnCours()) return;
 
-    
-    public Plateau getPlateau() { return plateau; }
+        etat.setCaseIndice(null);
+        etat.setIndiceEstSure(false);
+
+        Case[] resultat = JeuIA.chercherIndice(plateau);
+
+        if (resultat[0] != null) {
+            // case sure : on peut cliquer dessus sans risque
+            etat.setCaseIndice(resultat[0]);
+            etat.setIndiceEstSure(true);
+        } else if (resultat[1] != null) {
+            // mine probable : il faut y mettre un drapeau
+            etat.setCaseIndice(resultat[1]);
+            etat.setIndiceEstSure(false);
+        }
+
+        plateau.notifierObservateurs();
+    }
+
+    public void effacerIndice() {
+        etat.setCaseIndice(null);
+        plateau.notifierObservateurs();
+    }
+
+    public void perdre() {
+        if (!etat.isEnCours()) return;
+        etat.setPerdu(true);
+        etat.setEnCours(false);
+    }
+
+    public void gagner() {
+        if (!etat.isEnCours()) return;
+        etat.setGagne(true);
+        etat.setEnCours(false);
+    }
+
+    public void incrementerTemps() {
+        etat.incrementerTemps();
+    }
+
+    // getters - deleguent a etat ou plateau
+
+    public Plateau getPlateau()      { return plateau;              }
+    public boolean isEnCours()       { return etat.isEnCours();     }
+    public boolean isPerdu()         { return etat.isPerdu();       }
+    public boolean isGagne()         { return etat.isGagne();       }
+    public int     getTemps()        { return etat.getTemps();      }
+    public Case    getCaseIndice()   { return etat.getCaseIndice(); }
+    public boolean isIndiceEstSure() { return etat.isIndiceEstSure(); }
 }

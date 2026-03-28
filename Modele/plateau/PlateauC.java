@@ -3,35 +3,37 @@ package modele.plateau;
 import java.awt.Point;
 import modele.jeu.Difficulte;
 
-/**
- * Plateau carré : chaque case a jusqu'à 8 voisins.
- * Utilise l'enum Direction pour parcourir les 8 directions.
- */
+// plateau de jeu avec une grille carree (8 voisins par case)
 public class PlateauC extends Plateau {
 
-    public PlateauC() {
-        this(Difficulte.FACILE);
+    // les 8 directions possibles pour une grille carree
+    private static final int[][] DIRECTIONS = {
+        {-1, -1}, {0, -1}, {1, -1},
+        {-1,  0},           {1,  0},
+        {-1,  1}, {0,  1}, {1,  1}
+    };
+
+    public PlateauC(Difficulte d) {
+        super(d.getLargeurCarre(), d.getHauteurCarre(), d.getMinesCarre());
     }
 
-    public PlateauC(Difficulte difficulte) {
-        super(difficulte.getSquareSizeX(), difficulte.getSquareSizeY(), difficulte.getSquareNbMines());
+    public PlateauC(int largeur, int hauteur, int nbMines) {
+        super(largeur, hauteur, nbMines);
     }
 
     @Override
     public Case[] getVoisins(Case c) {
-        Point p = getPositionCase(c);
-        int x = p.x;
-        int y = p.y;
-
-        Case[] voisins = new Case[Direction.values().length];
+        Point p = getPosition(c);
+        Case[] voisins = new Case[DIRECTIONS.length];
         int i = 0;
 
-        for (Plateau.Direction dir : Plateau.Direction.values()) {
-            int nx = x + dir.dx;
-            int ny = y + dir.dy;
-            if (nx >= 0 && nx < sizeX && ny >= 0 && ny < sizeY) {
-                voisins[i++] = grilleCases[nx][ny];
+        for (int[] dir : DIRECTIONS) {
+            int nx = p.x + dir[0];
+            int ny = p.y + dir[1];
+            if (nx >= 0 && nx < largeur && ny >= 0 && ny < hauteur) {
+                voisins[i] = grille[nx][ny];
             }
+            i++;
         }
         return voisins;
     }

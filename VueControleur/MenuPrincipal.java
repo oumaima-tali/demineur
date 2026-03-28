@@ -5,76 +5,89 @@ import javax.swing.*;
 import modele.jeu.Difficulte;
 import modele.jeu.Jeu;
 
+// fenetre principale : menu de demarrage
 public class MenuPrincipal extends JFrame {
 
-    private JComboBox<Difficulte> difficulteCombo;
+    private JComboBox<Difficulte> comboNiveau;
 
     public MenuPrincipal() {
-        setTitle("Démineur ");
-        //setSize(500, 800);
+        setTitle("Demineur");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
         setResizable(false);
         afficherMenu();
-        pack();                         
-        setLocationRelativeTo(null); 
-        //setMinimumSize(new Dimension(300, 350));
-
         setVisible(true);
     }
 
-    private Difficulte getDifficulteSelectionnee() {
-        Difficulte difficulte = (Difficulte) difficulteCombo.getSelectedItem();
-        return difficulte != null ? difficulte : Difficulte.FACILE;
+    private Difficulte getNiveauSelectionne() {
+        Difficulte d = (Difficulte) comboNiveau.getSelectedItem();
+        return (d != null) ? d : Difficulte.FACILE;
     }
 
+    // cree le jeu et remplace le contenu de la fenetre
     private void lancerJeu(String typeGrille, Difficulte difficulte) {
         Jeu jeu = new Jeu(typeGrille, difficulte);
-        setContentPane(new VueControleur(jeu, difficulte, () -> lancerJeu(typeGrille, difficulte), this::afficherMenu));
-        pack();                         
-        setLocationRelativeTo(null); 
-        revalidate();
-        repaint();
+
+        // on cree aussi la vue console pour montrer l'independance du modele
+        new VueConsole(jeu.getPlateau());
+
+        VueControleur vue = new VueControleur(
+            jeu,
+            difficulte,
+            new Runnable() {
+                @Override
+                public void run() { lancerJeu(typeGrille, difficulte); }
+            },
+            new Runnable() {
+                @Override
+                public void run() { afficherMenu(); }
+            }
+        );
+
+        setContentPane(vue);
+        pack();
+        setLocationRelativeTo(null);
     }
 
     public void afficherMenu() {
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBackground(Color.LIGHT_GRAY);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(Color.LIGHT_GRAY);
+        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        JLabel titreLabel = new JLabel("JEU DE DEMINEUR");
-        titreLabel.setFont(new Font("Serif", Font.BOLD, 36));
-        titreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(titreLabel);
-        mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        // titre
+        JLabel titre = new JLabel("JEU DE DEMINEUR");
+        titre.setFont(new Font("Serif", Font.BOLD, 32));
+        titre.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(titre);
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        JLabel difficulteLabel = new JLabel("Niveau");
-        difficulteLabel.setFont(new Font("Serif", Font.BOLD, 20));
-        difficulteLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(difficulteLabel);
-        mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        // choix du niveau
+        JLabel labelNiveau = new JLabel("Niveau de difficulte :");
+        labelNiveau.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(labelNiveau);
+        panel.add(Box.createRigidArea(new Dimension(0, 8)));
 
-        difficulteCombo = new JComboBox<>(Difficulte.values());
-        difficulteCombo.setMaximumSize(new Dimension(180, 32));
-        difficulteCombo.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(difficulteCombo);
-        mainPanel.add(Box.createRigidArea(new Dimension(0, 24)));
+        comboNiveau = new JComboBox<Difficulte>(Difficulte.values());
+        comboNiveau.setMaximumSize(new Dimension(200, 30));
+        comboNiveau.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(comboNiveau);
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        JButton startCarreButton = new JButton("Grille Carrée");
-        startCarreButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        startCarreButton.addActionListener(e -> lancerJeu("carre", getDifficulteSelectionnee()));
-        mainPanel.add(startCarreButton);
-        mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        // boutons de jeu
+        JButton btnCarre = new JButton("Grille carree (classique)");
+        btnCarre.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnCarre.addActionListener(e -> lancerJeu("carre", getNiveauSelectionne()));
+        panel.add(btnCarre);
+        panel.add(Box.createRigidArea(new Dimension(0, 8)));
 
-        JButton startHexButton = new JButton("Grille Hexagonale");
-        startHexButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        startHexButton.addActionListener(e -> lancerJeu("hexagonal", getDifficulteSelectionnee()));
-        mainPanel.add(startHexButton);
+        JButton btnHex = new JButton("Grille hexagonale (avancee) ");
+        btnHex.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnHex.addActionListener(e -> lancerJeu("hexagonal", getNiveauSelectionne()));
+        panel.add(btnHex);
 
-        setContentPane(mainPanel);
-        pack();                          // ← adapte la fenêtre au contenu
-        setLocationRelativeTo(null); 
+        setContentPane(panel);
+        pack();
+        setLocationRelativeTo(null);
         revalidate();
         repaint();
     }

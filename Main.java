@@ -1,7 +1,11 @@
 public class Main {
     public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            new VueControleur.MenuPrincipal();
+        // lancement de la fenetre sur le bon thread swing
+        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new VueControleur.MenuPrincipal();
+            }
         });
     }
 }

@@ -4,188 +4,175 @@ import java.awt.Point;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Observable;
-import java.util.Set;
-import modele.jeu.Jeu;
 
+/*
+ * Classe abstraite commune aux deux types de grilles.
+ * Contient toute la logique de jeu : placement des mines, decouverte des cases,
+ * gestion des observateurs via java.util.Observable.
+ *
+ * La seule methode abstraite est getVoisins() car elle depend de la geometrie.
+ * PlateauC et PlateauH n'ont qu'a implementer ca.
+ */
 public abstract class Plateau extends Observable {
 
-    public int casesDecouvertes = 0;
+    protected int largeur;
+    protected int hauteur;
+    protected int nbMines;
+    protected Case[][] grille;
 
-    protected final int sizeX;
-    protected final int sizeY;
-    protected final int nbCases;
-    protected final int nbMines;
+    private boolean minesPlacees   = false;
+    private boolean mineTouchee    = false;
+    private int casesDecouvertes   = 0;
 
-    protected Jeu jeu;
-    protected HashMap<Case, Point> map = new HashMap<>();
-    protected Case[][] grilleCases;
-    protected boolean minesInitialisees = false;
+    // pour retrouver les coordonnees (x,y) d'une case a partir de l'objet
+    private HashMap<Case, Point> positions = new HashMap<>();
 
-    public Plateau(int sizeX, int sizeY, int nbMines) {
-        this.sizeX   = sizeX;
-        this.sizeY   = sizeY;
-        this.nbCases = sizeX * sizeY;
-        this.nbMines = nbMines;
-        this.grilleCases = new Case[sizeX][sizeY];
-        initPlateauVide();
-    }
+    public Plateau(int largeur, int hauteur, int nbMines) {
+        this.largeur  = largeur;
+        this.hauteur  = hauteur;
+        this.nbMines  = nbMines;
+        this.grille   = new Case[largeur][hauteur];
 
-    private void initPlateauVide() {
-        for (int x = 0; x < sizeX; x++) {
-            for (int y = 0; y < sizeY; y++) {
-                grilleCases[x][y] = new Case(this);
-                map.put(grilleCases[x][y], new Point(x, y));
+        for (int x = 0; x < largeur; x++) {
+            for (int y = 0; y < hauteur; y++) {
+                grille[x][y] = new Case(this);
+                positions.put(grille[x][y], new Point(x, y));
             }
         }
     }
 
-    public int getSizeX()  { return sizeX;  }
-    public int getSizeY()  { return sizeY;  }
-    public int getNbMines(){ return nbMines; }
+    // place les mines au premier clic pour eviter de perdre direct
+    private void initialiserMines(Case premierClic) {
+        if (minesPlacees) return;
 
-    //  Compteur de drapeaux 
-    public int getNbFlags() {
-        int count = 0;
-        for (int x = 0; x < sizeX; x++) {
-            for (int y = 0; y < sizeY; y++) {
-                if (grilleCases[x][y].isFlagged()) count++;
+        // cases interdites : la case cliquee + ses voisins
+        HashSet<Case> interdites = new HashSet<>();
+        interdites.add(premierClic);
+        for (Case v : getVoisins(premierClic)) {
+            if (v != null) interdites.add(v);
+        }
+
+        // si trop de mines par rapport a la taille, on relache la contrainte
+        if ((largeur * hauteur) - interdites.size() < nbMines) {
+            interdites.clear();
+            interdites.add(premierClic);
+        }
+
+        // placement aleatoire
+        int nb = 0;
+        while (nb < nbMines) {
+            int rx = (int)(Math.random() * largeur);
+            int ry = (int)(Math.random() * hauteur);
+            Case c = grille[rx][ry];
+            if (!c.isMine() && !interdites.contains(c)) {
+                c.setMine(true);
+                c.setValeur(-1);
+                nb++;
             }
         }
-        return count;
-    }
 
-    public Case[][] getCases() { return grilleCases; }
-
-    public Point getPositionCase(Case c) { return map.get(c); }
-
-    public Jeu getJeu() { return jeu; }
-
-    public void setJeu(Jeu jeuObj) { this.jeu = jeuObj; }
-
-    public void placerPieces() {
-        placerMinesAvecZoneInterdite(null);
         calculerValeurs();
-        minesInitialisees = true;
+        minesPlacees = true;
     }
 
-    public void placerMines() {
-        placerMinesAvecZoneInterdite(null);
-    }
-
-    private void placerMinesAvecZoneInterdite(Case premiereCaseCliquee) {
-        Set<Case> casesInterdites = new HashSet<>();
-
-        if (premiereCaseCliquee != null) {
-            casesInterdites.add(premiereCaseCliquee);
-            for (Case voisin : getVoisins(premiereCaseCliquee)) {
-                if (voisin != null) casesInterdites.add(voisin);
-            }
-            int casesDisponibles = nbCases - casesInterdites.size();
-            if (casesDisponibles < nbMines) {
-                casesInterdites.clear();
-                casesInterdites.add(premiereCaseCliquee);
-            }
-        }
-
-        int minesPlacees = 0;
-        while (minesPlacees < nbMines) {
-            int x = (int) (Math.random() * sizeX);
-            int y = (int) (Math.random() * sizeY);
-            if (!grilleCases[x][y].isMine() && !casesInterdites.contains(grilleCases[x][y])) {
-                grilleCases[x][y].setMine(true);
-                grilleCases[x][y].setValeur(-1);
-                minesPlacees++;
-            }
-        }
-    }
-
-    private void initialiserMinesAuPremierClic(Case premiereCaseCliquee) {
-        if (minesInitialisees) return;
-        placerMinesAvecZoneInterdite(premiereCaseCliquee);
-        calculerValeurs();
-        minesInitialisees = true;
-    }
-
+    // calcule le nombre de mines autour de chaque case libre
     private void calculerValeurs() {
-        for (int x = 0; x < sizeX; x++) {
-            for (int y = 0; y < sizeY; y++) {
-                Case c = grilleCases[x][y];
-                if (!c.isMine()) {
-                    int minesAutour = 0;
-                    for (Case voisin : getVoisins(c)) {
-                        if (voisin != null && voisin.isMine()) minesAutour++;
-                    }
-                    c.setValeur(minesAutour);
+        for (int x = 0; x < largeur; x++) {
+            for (int y = 0; y < hauteur; y++) {
+                Case c = grille[x][y];
+                if (c.isMine()) continue;
+
+                int nbMinesAutour = 0;
+                for (Case v : getVoisins(c)) {
+                    if (v != null && v.isMine()) nbMinesAutour++;
+                }
+                c.setValeur(nbMinesAutour);
+            }
+        }
+    }
+
+    // decouvre une case (appele par Jeu ou par la cascade)
+    public void decouvrirCase(Case c) {
+        if (c.isVisible() || c.isFlagged()) return;
+
+        if (!minesPlacees) {
+            initialiserMines(c);
+        }
+
+        c.decouvrir(); // appelle la strategie (libre ou mine)
+
+        if (!c.isMine()) {
+            casesDecouvertes++;
+        }
+    }
+
+    // clic gauche sur une case deja visible : decouvre les voisins si assez de drapeaux
+    public void decouvrirVoisins(Case c) {
+        if (!c.isVisible() || c.isMine()) return;
+
+        int nbDrapeaux = 0;
+        for (Case v : getVoisins(c)) {
+            if (v != null && v.isFlagged()) nbDrapeaux++;
+        }
+
+        if (nbDrapeaux == c.getValeur()) {
+            for (Case v : getVoisins(c)) {
+                if (v != null && !v.isFlagged()) {
+                    decouvrirCase(v);
                 }
             }
         }
     }
 
-    public void decouvrirCase(Case c) {
-        if (jeu != null && !jeu.isEnCours()) return;
-        if (c.isVisible() || c.isFlagged()) return;
-
-        initialiserMinesAuPremierClic(c);
-
-        c.decouvrir();
-
-        if (!c.isMine()) {
-            casesDecouvertes++;
-            if (casesDecouvertes == nbCases - nbMines) {
-                if (jeu != null) jeu.gagner();
+    // appele par StrategieCaseMine quand le joueur clique sur une mine
+    public void signalerExplosion() {
+        mineTouchee = true;
+        // on revele toutes les mines
+        for (int x = 0; x < largeur; x++) {
+            for (int y = 0; y < hauteur; y++) {
+                if (grille[x][y].isMine()) {
+                    grille[x][y].decouvrirForce();
+                }
             }
         }
     }
 
-    public void decouvrirCasesAdjacentes(Case c) {
-        if (jeu != null && !jeu.isEnCours()) return;
-        if (!c.isVisible() || c.isMine()) return;
+    // les sous-classes definissent leurs voisins selon leur geometrie
+    public abstract Case[] getVoisins(Case c);
 
-        int nbDrapeauxAutour = 0;
-        for (Case voisin : getVoisins(c)) {
-            if (voisin != null && voisin.isFlagged()) nbDrapeauxAutour++;
-        }
-        if (nbDrapeauxAutour != c.getValeur()) return;
+    // par defaut la grille n'est pas hexagonale
+    public boolean isHexagonal() { return false; }
 
-        for (Case voisin : getVoisins(c)) {
-            if (voisin != null && !voisin.isFlagged()) decouvrirCase(voisin);
-        }
-    }
-
-    void decouvrirToutesLesMines() {
-        for (int x = 0; x < sizeX; x++) {
-            for (int y = 0; y < sizeY; y++) {
-                Case caseCourante = grilleCases[x][y];
-                if (caseCourante.isMine()) caseCourante.decouvrirForce();
-            }
-        }
-    }
-
+    // notification des observateurs via java.util.Observable
+    // setChanged() est obligatoire sinon notifyObservers() ne fait rien
     public void notifierObservateurs() {
         setChanged();
         notifyObservers();
     }
 
-    public boolean isHexagonal() { return false; }
+    // getters
 
-    public abstract Case[] getVoisins(Case c);
+    public int      getLargeur()          { return largeur;          }
+    public int      getHauteur()          { return hauteur;          }
+    public int      getNbMines()          { return nbMines;          }
+    public Case[][] getGrille()           { return grille;           }
+    public boolean  isMineTouchee()       { return mineTouchee;      }
+    public boolean  isMinesPlacees()      { return minesPlacees;     }
+    public int      getCasesDecouvertes() { return casesDecouvertes; }
+    public Point    getPosition(Case c)   { return positions.get(c); }
 
-    public enum Direction {
-        NORD      ( 0, -1),
-        NORD_EST  ( 1, -1),
-        EST       ( 1,  0),
-        SUD_EST   ( 1,  1),
-        SUD       ( 0,  1),
-        SUD_OUEST (-1,  1),
-        OUEST     (-1,  0),
-        NORD_OUEST(-1, -1);
+    // aliases pour compatibilite avec VueControleur
+    public int      getSizeX()  { return largeur; }
+    public int      getSizeY()  { return hauteur; }
+    public Case[][] getCases()  { return grille;  }
 
-        public final int dx;
-        public final int dy;
-
-        Direction(int dx, int dy) {
-            this.dx = dx;
-            this.dy = dy;
+    public int getNbDrapeaux() {
+        int nb = 0;
+        for (int x = 0; x < largeur; x++) {
+            for (int y = 0; y < hauteur; y++) {
+                if (grille[x][y].isFlagged()) nb++;
+            }
         }
+        return nb;
     }
 }

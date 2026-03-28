@@ -1,50 +1,34 @@
 package modele.plateau;
 
-
 public class Case {
 
-    private int valeur;
-    private boolean visible = false;
-    private boolean flagged = false;
-    private int nbMinesAutour = 0;
-    private boolean mine = false;
+    private int     valeur;
+    private boolean visible  = false;
+    private boolean flagged  = false;
+    private boolean mine     = false;
 
-    // SCL par défaut, SCM si mine
-    private Strategie sd = new StrategieCaseLibre();
+    // la strategie change quand on pose une mine (setMine)
+    private Strategie strategie = new StrategieCaseLibre();
 
-    public int getValeur() {return valeur;}
+    // reference vers le plateau, necessaire pour que la strategie puisse agir
+    protected Plateau plateau;
 
-    public boolean isVisible() {return visible;}
-
-    public boolean isFlagged() {return flagged;}
-
-    public int getNbMinesAutour() {return nbMinesAutour;}
-
-   
-    public void decouvrir() {
-        if (!flagged) {
-            visible = true;
-            sd.decouvrir(this, plateau);
-        }
+    public Case(Plateau plateau) {
+        this.plateau = plateau;
     }
 
+    // decouvre la case si elle n'est pas marquee
+    public void decouvrir() {
+        if (flagged) return;
+        visible = true;
+        strategie.decouvrir(this, plateau);
+    }
+
+    // decouverte forcee quand on perd (pour afficher les mines)
     public void decouvrirForce() {
         visible = true;
         flagged = false;
     }
-
-    public boolean isMine() {return mine;}
-
-    public void setMine(boolean _mine) {
-        mine = _mine;
-        if (_mine) {
-            sd = new StrategieCaseMine();
-        } else {
-            sd = new StrategieCaseLibre();
-        }
-    }
-
-    public void setValeur(int _valeur) {valeur = _valeur;}
 
     public void toggleFlag() {
         if (!visible) {
@@ -52,11 +36,19 @@ public class Case {
         }
     }
 
-
-    protected Plateau plateau;
-
-    public Case(Plateau _plateau) {
-        plateau = _plateau;
+    // quand on place une mine sur cette case, on change de strategie
+    public void setMine(boolean mine) {
+        this.mine = mine;
+        if (mine) {
+            strategie = new StrategieCaseMine();
+        } else {
+            strategie = new StrategieCaseLibre();
+        }
     }
 
+    public void    setValeur(int v) { this.valeur = v;  }
+    public int     getValeur()      { return valeur;    }
+    public boolean isVisible()      { return visible;   }
+    public boolean isFlagged()      { return flagged;   }
+    public boolean isMine()         { return mine;      }
 }
