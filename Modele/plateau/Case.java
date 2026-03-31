@@ -10,7 +10,7 @@ public class Case {
     // la strategie change quand on pose une mine (setMine)
     private Strategie strategie = new StrategieCaseLibre();
 
-    // reference vers le plateau, necessaire pour que la strategie puisse agir
+    // reference vers le plateau
     protected Plateau plateau;
 
     public Case(Plateau plateau) {
@@ -24,7 +24,7 @@ public class Case {
         strategie.decouvrir(this, plateau);
     }
 
-    // decouverte forcee quand on perd (pour afficher les mines)
+    // decouverte forcee quand on perd 
     public void decouvrirForce() {
         visible = true;
         flagged = false;

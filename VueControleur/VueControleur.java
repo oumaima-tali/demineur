@@ -13,10 +13,7 @@ import modele.jeu.Jeu;
 import modele.plateau.Case;
 import modele.plateau.Plateau;
 
-/*
- * VueControleur : la vue graphique Swing + le controleur d'evenements.
- * Elle observe le plateau (java.util.Observer) et se met a jour a chaque notification.
- */
+
 public class VueControleur extends JPanel implements Observer {
 
     private Plateau    plateau;

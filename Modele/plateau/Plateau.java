@@ -9,9 +9,7 @@ import java.util.Observable;
  * Classe abstraite commune aux deux types de grilles.
  * Contient toute la logique de jeu : placement des mines, decouverte des cases,
  * gestion des observateurs via java.util.Observable.
- *
  * La seule methode abstraite est getVoisins() car elle depend de la geometrie.
- * PlateauC et PlateauH n'ont qu'a implementer ca.
  */
 public abstract class Plateau extends Observable {
 
@@ -143,8 +141,7 @@ public abstract class Plateau extends Observable {
     // par defaut la grille n'est pas hexagonale
     public boolean isHexagonal() { return false; }
 
-    // notification des observateurs via java.util.Observable
-    // setChanged() est obligatoire sinon notifyObservers() ne fait rien
+    
     public void notifierObservateurs() {
         setChanged();
         notifyObservers();
